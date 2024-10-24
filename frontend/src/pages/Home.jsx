@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../api";
 import Note from "../components/Note";
-import "../style/Home.css";
+import "../styles/Home.css";
 
 function Home() {
     // we want to send an authorized request to get all the notes we created
