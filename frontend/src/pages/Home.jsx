@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../api";
 import Note from "../components/Note";
 import "../styles/Home.css";
+import { ACCESS_TOKEN } from "../constants";
 
 function Home() {
     // we want to send an authorized request to get all the notes we created
@@ -11,6 +12,8 @@ function Home() {
     const [title, setTitle] = useState("")
 
     useEffect(() => {
+        console.log("Home component mounted");
+        console.log("Access Token in Home:", localStorage.getItem(ACCESS_TOKEN));
         getNotes();
     }, [])
 
