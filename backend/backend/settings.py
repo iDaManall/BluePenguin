@@ -28,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-6=7sr4)po!hh)mtcx=bzum1pdz1kkymtcjm&!5t1&g)q%x4u2e'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["*"] # will allow any different host to host our django application
 
