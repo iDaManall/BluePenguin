@@ -65,7 +65,7 @@ class Account(models.Model):
 class Profile(models.Model):
     account = models.OneToOneField(Account, on_delete=models.PROTECT)
     display_name = models.TextField(max_length=255)
-    # display_icon = URL from google cloud storage
+    display_icon = models.URLField(max_length=255, blank=True, null=True)
     average_rating = models.DecimalField(max_digits=1, decimal_places=1)
     slug = models.SlugField(max_length=20, unique=True) # derive from username
     item_count = models.PositiveIntegerField(default=0)
@@ -84,7 +84,7 @@ class Collection(models.Model):
 class Item(models.Model):
     title = models.TextField(max_length=100)
     profile = models.ForeignKey(Profile, on_delete=models.PROTECT)
-    # image = URL from google cloud storage
+    image = models.URLField(max_length=255, blank=True, null=True)
     description = models.TextField(max_length=255)
     selling_price = models.DecimalField(max_digits=6, decimal_places=2)
     highest_bid = models.DecimalField(max_digits=6, decimal_places=2)

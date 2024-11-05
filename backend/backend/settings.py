@@ -14,6 +14,7 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
+from google.cloud import storage
 
 load_dotenv() # load an environment file so we can use it for credentials, etc.
 
@@ -155,3 +156,13 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWS_CREDENTIALS = True
+
+# Google Cloud Storage Configuration
+GOOGLE_CLOUD_PROJECT_ID = 'fleet-source-414620'
+GOOGLE_CLOUD_STORAGE_BUCKET = 'bluepenguin'
+
+# URL Configuration for serving uploaded files
+MEDIA_URL = f'https://storage.googleapis.com/{GOOGLE_CLOUD_STORAGE_BUCKET}/'
+
+# Local file system for uploaded files 
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
