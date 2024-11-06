@@ -102,9 +102,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': "BluePenguin",
-        'HOST': 'localhost',
         'USER': 'bluepenguin',
-        'PASSWORD': 'booyork'
+        'PASSWORD': 'booyork',
+        'HOST': 'localhost',
+        'PORT': '3306',
     }
 }
 
