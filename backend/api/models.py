@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from .regions import *
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.contrib.auth.hashers import make_password, check_password
 
 # Create your models here.
 class Note(models.Model):
@@ -28,7 +29,7 @@ class CardDetails(models.Model):
     expire_year = models.PositiveIntegerField(choices=YEAR_CHOICES)
     cvv = models.PositiveIntegerField(unique=True)
 
-class Address(models.Model):
+class ShippingAddress(models.Model):
     street_address = models.TextField(max_length=255)
     city = models.TextField(max_length=255)
     state = models.TextField(max_length=255, blank=True, choices=STATE_CHOICES)
@@ -52,15 +53,22 @@ class Account(models.Model):
     ]
     status = models.CharField(max_length=3, choices=STATUS_CHOICES, default=STATUS_VISITOR)
     email = models.EmailField(unique=True)
-    dob = models.DateField(blank=True)
     card_details = models.OneToOneField(CardDetails, on_delete=models.CASCADE, null=True, blank=True)
     paypal_details = models.OneToOneField(PayPalDetails, on_delete=models.CASCADE, null=True, blank=True)
-    shipping_address = models.ForeignKey(Address, on_delete=models.CASCADE)
+    shipping_address = models.ForeignKey(ShippingAddress, on_delete=models.CASCADE)
     balance = models.DecimalField(max_digits=6, decimal_places=2)
-    
+    is_active = models.BooleanField(default=True)
+    is_suspended = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+    
+    def set_password(self, user_password):
+        self.password = make_password(user_password)
+    
+    def check_user_password(self, user_password):
+        return check_password(user_password, self.password)
 
 class Profile(models.Model):
     account = models.OneToOneField(Account, on_delete=models.PROTECT)
