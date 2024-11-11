@@ -7,7 +7,7 @@ This project is an online e-bidding platform where users can create and manage a
 ## Table of Contents
 - [Installation](#installation)
 - [Usage](#usage)
-- <!-- [Features](#features) -->
+<!-- -  [Features](#features) -->
 - [Contributing](#contributing)
 - [License](#license)
 
