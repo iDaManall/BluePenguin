@@ -1,5 +1,5 @@
 # BluePenguin
-A clean, simple e-bidding site for all your needs.
+A clean, simple e-bidding site for all your needs. Work In Progress...
 
 ## Description
 This project is an online e-bidding platform where users can create and manage auctions, place bids, and track auction outcomes in real time.
@@ -7,16 +7,16 @@ This project is an online e-bidding platform where users can create and manage a
 ## Table of Contents
 - [Installation](#installation)
 - [Usage](#usage)
-- [Features](#features)
+- <!-- [Features](#features) -->
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Installation
-1. Clone the repository (fix later):
+1. Clone the repository:
    ```bash
-   git clone https://github.com/username/e-bidding-platform.git
+   git clone https://github.com/iDaManall/BluePenguin.git
    ```
-2. Install dependencies (fix later):
+2. Install dependencies:
    ```bash
    cd frontend
    npm install   # for frontend
@@ -31,14 +31,15 @@ This project is an online e-bidding platform where users can create and manage a
    ```
 
 ## Usage
-- After starting the server, navigate to... <!-- `http://localhost:3000` to access the platform. -->
+- After starting the server, navigate to... `http://localhost:5173/` to access the platform.
 - <!-- Create a new auction by clicking "Create Auction" and filling out the form. -->
 
+<!---
 ## Features
-<!--- User authentication and profile management
+ User authentication and profile management
 - Real-time auction updates using WebSockets
-- Admin dashboard for auction management -->
-- TBD
+- Admin dashboard for auction management 
+- TBD -->
 
 ## Contributing
 Contributions are welcome! Please follow the steps below:
@@ -52,4 +53,4 @@ Contributions are welcome! Please follow the steps below:
 This project is licensed under... <!-- the MIT License - see the [LICENSE](LICENSE) file for details. -->
 
 ## Contact
-Created by... <!-- [Your Name](https://yourwebsite.com) - feel free to contact us! -->
+Created by Team ICEBERG... <!-- [Your Name](https://yourwebsite.com) - feel free to contact us! -->
