@@ -1,3 +1,76 @@
+# user status
+
+STATUS_USER = 'U'
+STATUS_SUPERUSER = 'S'
+STATUS_VISITOR = 'V'
+STATUS_VIP = 'VIP'
+USER_STATUS_CHOICES = [
+    (STATUS_USER, 'User'),
+    (STATUS_SUPERUSER, 'Superuser'),
+    (STATUS_VISITOR, 'Visitor'),
+    (STATUS_VIP, 'VIP')
+]
+
+# availability
+
+AVAILABLE_CHOICE = 'A'
+SOLD_CHOICE = 'S'
+AVAILABILITY_CHOICES = [
+    (AVAILABLE_CHOICE, 'Available'),
+    (SOLD_CHOICE, 'Sold')
+]
+
+
+#avatars
+
+BLUE_BLIND_AVATAR = "https://storage.googleapis.com/blue_penguin/default/blue_blind.png"
+BLUE_EGG_AVATAR = "https://storage.googleapis.com/blue_penguin/default/blue_egg.png"
+GREEN_GLASSES_AVATAR = "https://storage.googleapis.com/blue_penguin/default/green_glasses.png"
+GREEN_HAIR_AVATAR = "https://storage.googleapis.com/blue_penguin/default/green_hair.png"
+PURPLE_BANDIT_AVATAR = "https://storage.googleapis.com/blue_penguin/default/purple_bandit.png"
+PURPLE_EGG_AVATAR = "https://storage.googleapis.com/blue_penguin/default/purple_egg.png"
+RED_CROWN_AVATAR = "https://storage.googleapis.com/blue_penguin/default/red_crown.png"
+RED_EYEPATCH_AVATAR = "https://storage.googleapis.com/blue_penguin/default/red_eyepatch.png"
+YELLOW_GLASSES_AVATAR = "https://storage.googleapis.com/blue_penguin/default/yellow_glasses.png"
+YELLOW_HAIR_AVATAR = "https://storage.googleapis.com/blue_penguin/default/yellow_hair.png"
+
+AVATAR_CHOICES = [
+        (BLUE_BLIND_AVATAR, 'avatar1'),
+        (BLUE_EGG_AVATAR, 'avatar2'),
+        (GREEN_GLASSES_AVATAR, 'avatar3'),
+        (GREEN_HAIR_AVATAR, 'avatar4'),
+        (PURPLE_BANDIT_AVATAR, 'avatar5'),
+        (PURPLE_EGG_AVATAR, 'avatar6'),
+        (RED_CROWN_AVATAR, 'avatar7'),
+        (RED_EYEPATCH_AVATAR, 'avatar8'),
+        (YELLOW_GLASSES_AVATAR, 'avatar9'),
+        (YELLOW_HAIR_AVATAR, 'avatar10'),
+]
+
+# bid status
+
+HIGHEST_CHOICE = '1st'
+SECOND_HIGHEST_CHOICE = '2nd'
+THIRD_HIGHEST_CHOICE = '3rd'
+NOT_HIGHEST_CHOICE = 'F'
+BID_STATUS_CHOICES = [
+    (HIGHEST_CHOICE, 'Highest Bid'),
+    (SECOND_HIGHEST_CHOICE, 'Second Highest Bid'),
+    (THIRD_HIGHEST_CHOICE, 'Third Highest Bid'),
+    (NOT_HIGHEST_CHOICE, 'Not In the Top Three')
+]
+
+# transaction status
+
+PENDING_CHOICE = 'P'
+COMPLETE_CHOICE = 'C'
+TRANSACTION_STATUS_CHOICES = [
+    (PENDING_CHOICE, 'Pending'),
+    (COMPLETE_CHOICE, 'Complete')
+]
+
+# countries
+
 COUNTRY_CHOICES = [
     # North America
     ("United States", "United States"),
@@ -157,7 +230,9 @@ COUNTRY_CHOICES = [
     ("Taiwan", "Taiwan")
 ]
 
-STATE_CHOICES = [
+# states, provinces, territories
+
+STATE_PROVINCE_CHOICES = [
     ("AL", "Alabama"),
     ("AK", "Alaska"),
     ("AZ", "Arizona"),
@@ -207,10 +282,7 @@ STATE_CHOICES = [
     ("WA", "Washington"),
     ("WV", "West Virginia"),
     ("WI", "Wisconsin"),
-    ("WY", "Wyoming")
-]
-
-PROVICE_TERRITORY_CHOICES = [
+    ("WY", "Wyoming"),
     ("AB", "Alberta"),
     ("BC", "British Columbia"),
     ("MB", "Manitoba"),
@@ -225,3 +297,4 @@ PROVICE_TERRITORY_CHOICES = [
     ("NU", "Nunavut"),
     ("YT", "Yukon"),
 ]
+

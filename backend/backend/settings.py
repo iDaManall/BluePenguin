@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-6=7sr4)po!hh)mtcx=bzum1pdz1kkymtcjm&!5t1&g)q%x4u2e'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["*"] # will allow any different host to host our django application
 
@@ -60,7 +60,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'api',
     'rest_framework',
-    'corsheaders'
+    'rest_framework_simplejwt',
+    'corsheaders',
+    'django_filters',
 ]
 
 MIDDLEWARE = [
@@ -113,6 +115,7 @@ DATABASES = {
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -159,8 +162,9 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWS_CREDENTIALS = True
 
 # Google Cloud Storage Configuration
-GOOGLE_CLOUD_PROJECT_ID = 'fleet-source-414620'
-GOOGLE_CLOUD_STORAGE_BUCKET = 'bluepenguin'
+GOOGLE_CLOUD_PROJECT_ID = os.getenv('GOOGLE_CLOUD_PROJECT_ID')
+GOOGLE_CLOUD_STORAGE_BUCKET = os.getenv('GOOGLE_CLOUD_STORAGE_BUCKET')
+GOOGLE_APPLICATION_CREDENTIALS = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
 
 # URL Configuration for serving uploaded files
 MEDIA_URL = f'https://storage.googleapis.com/{GOOGLE_CLOUD_STORAGE_BUCKET}/'

@@ -10,3 +10,4 @@ psycopg2-binary
 python-dotenv
 mysqlclient
 google-cloud-storage
+django-filter
