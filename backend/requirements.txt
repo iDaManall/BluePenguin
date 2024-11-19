@@ -6,8 +6,9 @@ djangorestframework-simplejwt
 PyJWT
 pytz
 sqlparse
-psycopg2-binary
 python-dotenv
 mysqlclient
 google-cloud-storage
 django-filter
+cloud-sql-python-connector
+psycopg2-binary

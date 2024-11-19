@@ -23,15 +23,17 @@ class PayPalDetails(models.Model):
     def __str__(self):
         return self.paypal_email
 
-
 class CardDetails(models.Model):
-    card_number = models.PositiveIntegerField(unique=True, primary_key=True)
+    card_number = models.CharField(unique=True)
     card_holder_name = models.TextField(max_length=100)
-    MONTH_CHOICES = [(i,i) for i in range(1,13)]
-    YEAR_CHOICES = [(i,i) for i in range(2024,2051)]
+    
+    MONTH_CHOICES = [(i, i) for i in range(1, 13)]
+    YEAR_CHOICES = [(i, i) for i in range(2024, 2051)]
+    
     expire_month = models.PositiveIntegerField(choices=MONTH_CHOICES)
     expire_year = models.PositiveIntegerField(choices=YEAR_CHOICES)
-    is_valid = models.BooleanField(default=False) # verified through CVV
+    is_valid = models.BooleanField(default=False)  # Verified through CVV
+
 
 
 class ShippingAddress(models.Model):
@@ -39,7 +41,7 @@ class ShippingAddress(models.Model):
     address_line_2 = models.TextField(max_length=255, blank=True)
     city = models.TextField(max_length=255)
     state = models.TextField(max_length=255, blank=True)
-    zip = models.PositiveIntegerField(blank=True)
+    zip = models.TextField(blank=True)
     country = models.TextField(max_length=255, choices=COUNTRY_CHOICES)
 
 
