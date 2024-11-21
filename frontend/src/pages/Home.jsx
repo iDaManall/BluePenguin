@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import api from "../api";
+import api from "../api/api";
 import Note from "../components/Note";
 import "../styles/Home.css";
 import { ACCESS_TOKEN } from "../constants";
