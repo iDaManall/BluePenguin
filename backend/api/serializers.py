@@ -8,6 +8,7 @@ from django.core.mail import send_mail
 from django.urls import reverse
 from .utils import *
 from django.conf import settings
+from supabase_py import create_client
 
 '''
 class UserSerializer(serializers.ModelSerializer):
@@ -97,33 +98,51 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     # create new account 
     def create(self, validated_data):
-        # First extract the data from User model
-        username = validated_data.pop("username")
-        email = validated_data.pop("email")
-        first_name = validated_data.pop("first_name")
-        last_name = validated_data.pop("last_name")
-        password = validated_data.pop("password")
+        try:
+            supabase = create_client(
+                settings.SUPABASE_URL,
+                settings.SUPABASE_SERVICE_ROLE_KEY,
+            )
 
-        user = User.objects.create_user(username=username, 
+            supabase.auth.admin.create_user(
+                {
+                    'email': validated_data['email'],
+                    'password': validated_data['password'],
+                    'email_confirm': True 
+                }
+            )
+
+            username = validated_data.pop("username")
+            email = validated_data.pop("email")
+            first_name = validated_data.pop("first_name")
+            last_name = validated_data.pop("last_name")
+            password = validated_data.pop("password")
+
+            user = User.objects.create_user(username=username, 
                                         email=email, 
                                         first_name=first_name, 
                                         last_name=last_name)
-        user.set_password(password)
-        user.save()
-        '''
-        user.email_user(subject='Welcome to Blue Penguin!', 
+            user.set_password(password)
+            user.save()
+            '''
+            user.email_user(subject='Welcome to Blue Penguin!', 
                         message='Thank you for registering with us. We hope you enjoy your stay!\n\nfrom Blue Penguin Team', 
                         from_email=settings.EMAIL_HOST_USER)
-        '''
-        # create account
-        account = Account.objects.create(user=user) # Note: **validated_data refers to everything you just validated
+            '''
+            # create account
+            account = Account.objects.create(user=user) # Note: **validated_data refers to everything you just validated
 
-        display_name = user.get_full_name()
-        description = None
+            display_name = user.get_full_name()
+            description = None
 
-        profile = Profile.objects.create(account=account, display_name=display_name, description=description)
+            profile = Profile.objects.create(account=account, display_name=display_name, description=description)
 
-        return profile
+            return profile
+        except Exception as e:
+            raise serializers.ValidationError(
+                f"Failed to create user: {str(e)}"
+            )
+
     
 
 class AccountSerializer(serializers.ModelSerializer):

@@ -9,7 +9,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 # api/accounts/<pk>/set-shipping-address lets you set shipping address
 # api/accounts/<pk>/set-card-details lets you update set details
 # api/accounts/<pk>/set-paypal-details lets you set paypal details
-# api/profiles/<pk>/ lets you view account
+# api/profiles/<pk>/ lets you view profile
 # api/profiles/<pk>/edit-profile lets you edit profile
 
 

@@ -4,6 +4,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.timezone import now
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.contrib.postgres.fields import ArrayField
 from django.contrib.auth.hashers import make_password, check_password
 
 # Create your models here.
@@ -86,7 +87,7 @@ class Collection(models.Model):
 
 class Item(models.Model):
     title = models.TextField(max_length=100)
-    image_urls = models.JSONField(default=list, blank=True)
+    image_urls = models.JSONField(default=list)
     profile = models.ForeignKey(Profile, on_delete=models.PROTECT)
     description = models.TextField(max_length=255)
     asking_price = models.DecimalField(max_digits=6, decimal_places=2)

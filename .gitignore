@@ -1,2 +1,7 @@
 penv/
-fleet-source-414620-020f06de36ae.json
+backend/fleet-source-414620-020f06de36ae.json
+.env
+backend/astute-harmony-441702-v4-897ad6a174e7.json
+server-ca.pem
+client-cert.pem
+client-key.pem

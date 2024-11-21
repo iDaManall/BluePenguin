@@ -19,6 +19,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.exceptions import NotFound
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.views import APIView
+from django.conf import settings
+from supabase_py import create_client
+from django.core.cache import cache
 
 
 '''
@@ -64,8 +68,25 @@ class AccountViewSet(viewsets.ModelViewSet):
 
         if serializer.is_valid():
             try:
-                serializer.save() # this is supposed to call the create() method in the serializer
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                user = serializer.save() # this is supposed to call the create() method in the serializer
+
+                supabase = create_client(
+                    settings.SUPABASE_URL,
+                    settings.SUPABASE_ANON_KEY
+                )
+
+                auth_response = supabase.auth.sign_in_with_password(
+                    {
+                        'email': user.email,
+                        'password': request.data['password'],
+                    }
+                )
+
+                return Response({
+                    'user': serializer.data,
+                    'access_token': auth_response.session.access_token,
+                    'refresh_token': auth_response.session.refresh_token
+                    }, status=status.HTTP_201_CREATED)
             except IntegrityError: # if you put attribs as unique=True in the model class
                 return Response({"error": "Username or email already in use"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -189,20 +210,78 @@ def verify_email(request, uidb64, token):
         return Response({"error": "Email verification failed."}, status=status.HTTP_400_BAD_REQUEST)
 '''
 
-class SignInView(TokenObtainPairView):
-    serializer_class = SignInSerializer
+class SignInView(APIView):
+    permission_classes = [AllowAny]
 
-class SignOutView(generics.GenericAPIView):
+    def post(self, request):
+        email = request.data.get('email')
+        password = request.data.get('password')
+
+        try:
+            supabase = create_client(
+                settings.SUPABASE_URL,
+                settings.SUPABASE_ANON_KEY,
+            )
+
+            # sign in, get session
+            auth_response = supabase.auth.sign_in_with_password(
+                {
+                    'email': email,
+                    'password': password,
+                }
+            )
+
+            # cache session
+            session_key = f'supabase_session_{auth_response.session.access_token}'
+            session_data = {
+                'email': email,
+                'session_id': auth_response.session.id,
+                'expires_at': auth_response.session.expires_at,
+            }
+            cache.set(
+                session_key,
+                session_data,
+                timeout=3600
+            )
+
+            return Response(
+                {
+                    'access_token': auth_response.session.access_token,
+                    'refresh_token': auth_response.session.refresh_token,
+                    'expires_at': auth_response.session.expires_at,
+                }
+            )
+        except Exception as e:
+            return Response(
+                {'error': 'Invalid credentials'},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+
+    # serializer_class = SignInSerializer ;; if nothing works, go back to this
+
+class SignOutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         try:
-            refresh_token = request.data["refresh"]
-            token = RefreshToken(refresh_token)
-            token.blacklist()
+            supabase = create_client(
+                settings.SUPABASE_URL,
+                settings.SUPABASE_ANON_KEY
+            )
+
+            auth_header = request.META.get('HTTP_AUTHORIZATION')
+            if auth_header and auth_header.startswith('Bearer '):
+                token = auth_header.split(' ')
+                cache.delete(f'supabase_session{token}')
+                supabase.auth.sign_out(token)
+
             return Response({"message": "User logged out successfully"}, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid token"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
 
 # profile view 
@@ -224,6 +303,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             raise NotFound({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
     
     # update profile
+    # /api/profiles/edit-profile
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsOwner], url_path='edit-profile')
     def update_profile(self, request, pk=None):
         profile = self.get_object()
@@ -235,6 +315,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    # /api/profiles/rate-profile
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotOwner], url_path='rate-profile')
     def rate_profile(self, request, pk=None):
         ratee = self.get_object()
@@ -250,6 +331,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    # /api/profiles/saves
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='saves')
     def view_saves(self, request):
         profile = self.get_object()
@@ -258,6 +340,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
     
+    # /api/profiles/delete-saved-item
     @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsOwner], url_path='delete-saved-item')
     def delete_save(self, request):
         save_id = request.data.get('id', None)
@@ -271,6 +354,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
     
+    # /api/profiles/report-user
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='report-user')
     def report(self, request):
         reportee = self.get_object()
@@ -298,11 +382,14 @@ class ItemViewSet(viewsets.ModelViewSet):
     ## browse items by highest bid AND collection: api/items/?collection__title={title}&ordering=total_bids&availability=available&highest_bid__gt={int}&highest_bid__lt={int}
     ## browse items by search (including filters): api/items/?search={fields}&availability=available{whatever filters}
     
-
+    # 25-50
+    # 50-100
+    # api/items/?search={sudgkjasals}&availability=available&highest_bid__gt=25&highest_bid__lt=50
     # create and view an item
     # you can edit an item's description but nothing else?
     # delete an item
 
+    # /api/items/post-item
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor], url_path='post-item')
     def create_new_item(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -319,12 +406,14 @@ class ItemViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
     
+    # /api/items/{pk}/delete-item
     @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsOwner], url_path='delete-item')
     def delete_item(self, request, pk=None):
         item = self.get_object()
         item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
+    # /api/items/{pk}/comment
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='comment')
     def comment(self, request):
         # configure the correct item and profile that commented
@@ -338,6 +427,7 @@ class ItemViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    # /api/items/{pk}/view_comments
     @action(detail=True, methods=['post'], permission_classes=[AllowAny], url_path='comments')
     def view_comments(self, request):
         item = self.get_object()
@@ -347,6 +437,7 @@ class ItemViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
     
+    # /api/items/{pk}/reply
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='reply')
     def reply(self, request):
         item = self.get_object()
@@ -360,6 +451,7 @@ class ItemViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    # /api/items/{pk}/replies
     @action(detail=True, methods=['get'], permission_classes=[AllowAny], url_path='replies')
     def view_replies(self, request):
         parent_id = request.data.get('parent', None)
@@ -411,7 +503,7 @@ class ItemViewSet(viewsets.ModelViewSet):
 
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['post'], permission_classes=['IsAuthenticated'], url_path='like-comment')
+    @action(detail=True, methods=['post'], permission_classes=['IsAuthenticated'], url_path='dislike-comment')
     def dislike_comment(self, request):
         comment_id = request.get.data('id', None)
 
@@ -450,3 +542,4 @@ class ItemViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+    
