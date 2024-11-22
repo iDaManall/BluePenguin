@@ -6,8 +6,7 @@ This project is an online e-bidding platform where users can create and manage a
 
 ## Table of Contents
 - [Installation](#installation)
-- [Usage](#usage)
-<!-- -  [Features](#features) -->
+- [Usage](#usage)<!-- -  [Features](#features) -->
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -17,21 +16,35 @@ This project is an online e-bidding platform where users can create and manage a
    git clone https://github.com/iDaManall/BluePenguin.git
    ```
 2. Install dependencies:
+   Frontend:
    ```bash
    cd frontend
-   npm install   # for frontend
+   npm install
+   npm install @supabase/supabase-js
+   npm install axios
+   npm install react-router-dom
+   ```
+   Backend:
+   ```bash
+   cd backend
    pip install -r requirements.txt  # for backend
    ```
-3. Set up environment variables as per the `requirements.txt` file.
+4. Set up environment variables such as api keys and database urls. Run migrations if needed. 
 
-4. Start the application:
+5. Start the application:
+   Frontend:
    ```bash
-   npm run dev  # for frontend
-   python manage.py runserver  # for backend
+   cd frontend
+   npm run dev
+   ```
+   Backend:
+   ```bash
+   cd backend
+   python manage.py runserver
    ```
 
 ## Usage
-- After starting the server, navigate to... `http://localhost:5173/` to access the platform.
+- After starting the server, navigate to... `http://localhost:8000/` to access the platform.
 - <!-- Create a new auction by clicking "Create Auction" and filling out the form. -->
 
 <!---
