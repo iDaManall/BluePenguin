@@ -7,7 +7,6 @@ PyJWT
 pytz
 sqlparse
 python-dotenv
-mysqlclient
 google-cloud-storage
 django-filter
 cloud-sql-python-connector

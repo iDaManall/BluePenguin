@@ -32,12 +32,15 @@ const Login = () => {
 
   return (
     <div className="signin-container">
+    
       <div className="signin-box">
         <h2>Sign In</h2>
         {error && <p className="error-message">{error}</p>}
         <form onSubmit={handleSubmit} className="signin-form">
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+           {/*  <label htmlFor="username">Username</label>*/}
+            <div className= "input-icon">
+            <i className='bx bx-user-pin bx-md'></i>
             <input
               id="username"
               type="text"
@@ -47,9 +50,13 @@ const Login = () => {
               onChange={handleChange}
               required
             />
+            </div>
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            
+            {/*<label htmlFor="password">Password</label>*/}
+            <div className= "input-icon">
+            <i class='bx bx-lock-alt bx-md'></i>
             <input
               id="password"
               type="password"
@@ -59,12 +66,15 @@ const Login = () => {
               onChange={handleChange}
               required
             />
+            </div>
           </div>
           <button type="submit" className="submit-button">
             Sign In
           </button>
         </form>
       </div>
+
+      <img src="https://storage.googleapis.com/blue_penguin/default/Blue_Penguin_Pablo.png" alt="BluePenguin Pable" className="signin-image" />
     </div>
   );
 };
