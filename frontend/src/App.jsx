@@ -6,6 +6,8 @@ import NotFound from "./pages/NotFound";
 import ProfileView from "./pages/Profile/ProfileView";
 import EditProfile from "./pages/Profile/EditProfile";
 import Navbar from "./components/NavBar";
+import { AuthProvider } from './context/AuthContext';
+
 
 // clear refresh and access token when we log out, navigate to login page
 function Logout(){
@@ -22,19 +24,21 @@ function RegisterAndLogout() {
 function App() {
 
   return (
-    <BrowserRouter>
-      {/*all of the different routes we want to navigate between*/}
-      <Routes>
-        <Route path = "/" element = {<Home />} />
-        <Route path = "/login" element = {<Login />} />
-        <Route path = "/logout" element = {<Logout />} />
-        <Route path = "/register" element = {<RegisterAndLogout />} />
-        <Route path = "/home" element = {<Home />} />
-        <Route path="/profile/:id" element={<ProfileView />} />
-        <Route path="/profile/edit/:id" element={<EditProfile />} />
-        <Route path = "*" element = {<NotFound />}></Route>
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        {/*all of the different routes we want to navigate between*/}
+        <Routes>
+          <Route path = "/" element = {<Home />} />
+          <Route path = "/login" element = {<Login />} />
+          <Route path = "/logout" element = {<Logout />} />
+          <Route path = "/register" element = {<RegisterAndLogout />} />
+          <Route path = "/home" element = {<Home />} />
+          <Route path="/profile/:id" element={<ProfileView />} />
+          <Route path="/profile/edit/:id" element={<EditProfile />} />
+          <Route path = "*" element = {<NotFound />}></Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }
 
