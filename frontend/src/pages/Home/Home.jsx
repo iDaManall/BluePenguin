@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { itemService } from '../../api/api';
 import SearchBar from '../../components/SearchBar';
-import CategoryList from '../../components/CategoryList';
+// import CategoryList from '../../components/CategoryList';
 // import FeaturedItems from '../../components/FeaturedItems';
 import './Home.css';
 
@@ -42,14 +42,14 @@ const Home = () => {
 
       <section className="categories-section">
         <h2>Popular Categories</h2>
-        <CategoryList />
+        {/* <CategoryList /> */}
       </section>
 
       <section className="featured-section">
         <h2>Featured Items</h2>
         {loading && <div className="loading">Loading...</div>}
         {error && <div className="error">{error}</div>}
-        {!loading && !error && <FeaturedItems items={featuredItems} />}
+        {/* {!loading && !error && <FeaturedItems items={featuredItems} />} */}
       </section>
 
       <section className="cta-section">
