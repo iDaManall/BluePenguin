@@ -3,12 +3,13 @@ from .serializers import *
 from .models import *
 from .permissions import *
 from .filters import *
+from .utils import EmailNotifications
 
 from django.shortcuts import render
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from django.db.models.aggregates import Avg, Count
-from django.utils.http import urlsafe_base64_encode
+from django.db.models.aggregates import Avg, Count, Max
+from django.utils import timezone
 from django.utils.encoding import force_str
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, viewsets, status
@@ -23,6 +24,8 @@ from rest_framework.views import APIView
 from django.conf import settings
 from supabase_py import create_client
 from django.core.cache import cache
+
+from decimal import Decimal
 
 
 '''
@@ -73,13 +76,6 @@ class AccountViewSet(viewsets.ModelViewSet):
                 supabase = create_client(
                     settings.SUPABASE_URL,
                     settings.SUPABASE_ANON_KEY
-                )
-
-                auth_response = supabase.auth.sign_in_with_password(
-                    {
-                        'email': user.email,
-                        'password': request.data['password'],
-                    }
                 )
 
                 return Response({
@@ -542,4 +538,38 @@ class ItemViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, CanBidOn], url_path='perform-bid')
+    def place_bid(self, request, pk=None):
+        item = self.get_object()
+        user = request.user
+        account = user.account
+        if not item.is_available():
+            return Response({"error": "Bidding has ended"})
+        
+        bid_amount = Decimal(request.data.get('bid_price'))
+        if bid_amount <= item.highest_bid:
+            return Response({"error": "Bid must be higher than current bid."})
+        elif bid_amount <= account.balance:
+            return Response({"error": "Insufficient funds."})
+        
+        highest_bid = item.highest_bid
+        highest_bid_obj = Bid.objects.filter(item=item, bid_price=highest_bid).first()
+        serializer = BidSerializer(data=request.data, context={'request': request, 'item': item})
+        if serializer.is_valid():
+            bid = serializer.save()
+            curr_highest = Bid.objects.filter(item=item).aggregate(Max(bid_price))
+
+            if curr_highest == bid:
+                if highest_bid_obj:   
+                    EmailNotifications.notify_outbid(
+                        highest_bid_obj.profile.account.user,
+                        item,
+                        bid_amount
+                    )
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        
     
