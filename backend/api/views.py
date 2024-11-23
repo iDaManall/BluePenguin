@@ -26,6 +26,7 @@ from supabase_py import create_client
 from django.core.cache import cache
 
 from decimal import Decimal
+from time import sleep
 
 
 '''
@@ -72,11 +73,17 @@ class AccountViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             try:
                 user = serializer.save() # this is supposed to call the create() method in the serializer
+                sleep(1)
 
                 supabase = create_client(
                     settings.SUPABASE_URL,
                     settings.SUPABASE_ANON_KEY
                 )
+
+                auth_response = supabase.auth.sign_in_with_password({
+                                'email': request.data['email'],
+                                'password': request.data['password'],
+                })
 
                 return Response({
                     'user': serializer.data,
@@ -258,7 +265,7 @@ class SignInView(APIView):
             )
         except Exception as e:
             return Response(
-                {'error': 'Invalid credentials'},
+                {'error': f'Invalid credentials: {str(e)}'},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
