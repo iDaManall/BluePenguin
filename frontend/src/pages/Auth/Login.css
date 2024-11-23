@@ -8,7 +8,7 @@
 
   }
 
-  .signin-container #username{
+  .signin-container #email{
     display: block;
     border:none;
     border-radius: 0px;
@@ -17,7 +17,7 @@
     margin: 0px;
   }
 
-  .signin-container #username:focus{
+  .signin-container #email:focus{
     box-shadow: 0 4px 2px rgba(105, 140, 216, 2)
   }
   
