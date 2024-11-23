@@ -117,10 +117,11 @@ class Item(models.Model):
                 bid_price=self.highest_bid
             ).order_by('time_of_bid').first()
 
-            self.winning_bid = winning_bid
-            self.availability = SOLD_CHOICE
-            self.save()
-            return winning_bid
+            if winning_bid:
+                self.winning_bid = winning_bid
+                self.availability = SOLD_CHOICE
+                self.save()
+                return winning_bid
         return None
     
 

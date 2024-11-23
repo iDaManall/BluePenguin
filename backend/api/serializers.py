@@ -8,7 +8,7 @@ from django.core.mail import send_mail
 from django.urls import reverse
 from .utils import *
 from django.conf import settings
-from supabase_py import create_client
+from supabase import create_client
 
 from django.utils import timezone
 
@@ -103,19 +103,6 @@ class RegisterSerializer(serializers.ModelSerializer):
     # create new account 
     def create(self, validated_data):
         try:
-            supabase = create_client(
-                settings.SUPABASE_URL,
-                settings.SUPABASE_SERVICE_ROLE_KEY,
-            )
-
-            supabase.auth.admin.create_user(
-                {
-                    'email': validated_data['email'],
-                    'password': validated_data['password'],
-                    'email_confirm': True 
-                }
-            )
-
             username = validated_data["username"]
             email = validated_data["email"]
             first_name = validated_data["first_name"]
@@ -141,6 +128,19 @@ class RegisterSerializer(serializers.ModelSerializer):
             profile = Profile.objects.create(account=account, 
                                             display_name=display_name or user.get_full_name(), 
                                             description=description)
+
+            supabase = create_client(
+                settings.SUPABASE_URL,
+                settings.SUPABASE_SERVICE_ROLE_KEY,
+            )
+
+            supabase.auth.admin.create_user(
+                {
+                    'email': validated_data['email'],
+                    'password': validated_data['password'],
+                    'email_confirm': False 
+                }
+            )
 
             return user
         except Exception as e:
@@ -451,3 +451,19 @@ class BidSerializer(serializers.ModelSerializer):
         )
 
         return bid
+    
+class TransactionSerializer(serializers.ModelSerializer):
+    seller_username = serializers.CharField(source='seller.user.username', read_only=True)
+    buyer_username = serializers.CharField(source='buyer.user.username', read_only=True)
+    item_title = serializers.CharField(source='bid.item.title', read_only=True)
+    bid_amount = serializers.DecimalField(source='bid.bid_price', max_digits=6, decimal_places=2, read_only=True)
+    
+    class Meta:
+        model = Transaction
+        fields = ['id', 'seller_username', 'buyer_username', 'item_title', 'bid_amount', 'status', 'shipped', 'received',
+        ]
+        extra_kwargs = {
+            'status': {'read_only': True},  
+            'shipped': {'read_only': True}, 
+            'received': {'read_only': True}
+        }

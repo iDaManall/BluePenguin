@@ -22,7 +22,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.views import APIView
 from django.conf import settings
-from supabase_py import create_client
+from supabase import create_client
 from django.core.cache import cache
 
 from decimal import Decimal
@@ -195,8 +195,74 @@ class AccountViewSet(viewsets.ModelViewSet):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 
-'''
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='view-transactions')
+    def view_transactions(self, request):
+        try:
+            seller_account = self.get_object()
+            seller_transactions = Transaction.objects.filter(seller=seller_account)
+            serializer = TransactionSerializer(seller_transactions, many=True)
+
+            return Response(
+                {
+                    'transactions': serializer.data,
+                    'count': seller_transactions.count()
+                }
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to fetch transactions: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='view-pending-bids')
+    def view_pending_bids(self, request):
+        try:
+            account = self.get_object()
+            profile = account.profile
+            pending_bids = Bid.objects.filter(profile=profile, item__availability=AVAILABLE_CHOICE).select_related('item')
+
+            serializer = BidSerializer(pending_bids, many=True)
+            return Response(
+                {
+                    'pending_bids': serializer.data,
+                    'count': pending_bids.count()
+                }
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to fetch transactions: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='view-awaiting-arrival')
+    def view_awaiting_arrivals(self, request):
+        try:
+            buyer_account = self.get_object()
+            transactions = Transaction.objects.filter(buyer=buyer_account, status__in=[PENDING_CHOICE, SHIPPED_CHOICE])
+
+            serializer = TransactionSerializer(transactions, many=True)
+            return Response(
+                {
+                    'awaiting_arrivals': serializer.data,
+                    'awaiting_arrivals_count': transactions.count()
+                }
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to fetch transactions: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    # next: seller shipping item
+    # next: buyer 'received' item
+
+
+
+''' 
 @api_view(['GET'])
 def verify_email(request, uidb64, token):
     try:
@@ -574,7 +640,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         serializer = BidSerializer(data=request.data, context={'request': request, 'item': item})
         if serializer.is_valid():
             bid = serializer.save()
-            curr_highest = Bid.objects.filter(item=item).aggregate(Max(bid_price))
+            curr_highest = Bid.objects.filter(item=item).order_by('-bid_price','time_of_bid').first()
 
             if curr_highest == bid:
                 if highest_bid_obj:   
