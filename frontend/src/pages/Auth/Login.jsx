@@ -31,12 +31,12 @@ const Login = () => {
   };
 
   return (
-    <div className="signin-container">
+    <div className="login-container">
     
-      <div className="signin-box">
-        <h2>Sign In</h2>
+      <div className="login-box">
+        <h2>Login</h2>
         {error && <p className="error-message">{error}</p>}
-        <form onSubmit={handleSubmit} className="signin-form">
+        <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
            {/*  <label htmlFor="username">Username</label>*/}
             <div className= "input-icon">
@@ -69,12 +69,12 @@ const Login = () => {
             </div>
           </div>
           <button type="submit" className="submit-button">
-            Sign In
+            Login
           </button>
         </form>
       </div>
 
-      <img src="https://storage.googleapis.com/blue_penguin/default/Blue_Penguin_Pablo.png" alt="BluePenguin Pable" className="signin-image" />
+      <img src="https://storage.googleapis.com/blue_penguin/default/Blue_Penguin_Pablo.png" alt="BluePenguin Pable" className="login-image" />
     </div>
   );
 };

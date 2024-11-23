@@ -1,54 +1,66 @@
-.signin-container {
+.login-container {
     display: flex;
     /*flex-direction: column;*/
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    padding: 20px
-
+    padding: 20px;
+    font: white;
   }
 
-  .signin-container #username{
+  .username{
+    font-size: px;
+    font: white;
+  }
+
+  .login-container #username{
     display: block;
     border:none;
     border-radius: 0px;
     outline: none;
-    border-bottom: 2px solid black;
+    border-bottom: 1px solid rgb(255, 255, 255);
+    background-color: transparent;
     margin: 0px;
+    font: white;
   }
 
-  .signin-container #username:focus{
-    box-shadow: 0 4px 2px rgba(105, 140, 216, 2)
+  .login-container #username:focus{
+    box-shadow: 0 4px 0 rgba(105, 140, 216, 2);
+    font: white;
   }
   
-   .signin-container #password{
+   .login-container #password{
     display: block;
     border:none;
     border-radius: 0px;
     outline: none;
-    border-bottom: 2px solid black;
+    border-bottom: 1px solid rgb(255, 255, 255);
+    background-color: transparent;
     margin: 0px;
+    font: red;
   }
 
-  .signin-container #password:focus{
-    box-shadow: 0 4px 2px rgba(105, 140, 216, 2)
+  .login-container #password:focus{
+    box-shadow: 0 4px 0 rgba(105, 140, 216, 2);
+    color: white;
   }
   
-  .signin-box {
+  .login-box {
     width: 100%;
     max-width: 28rem;
-    background-color: white;
+    background-color: rgba(0, 0, 0, 0.5);
     border-radius: 45px;
-    padding : 45px;
+    padding : 35px;
   }
   
-  .signin-box h2 {
+  .login-box h2 {
     font-size: 2.5rem;
     margin-bottom: 1.5rem;
     text-align: center;
+    color:white;
   }
   
-  .signin-form {
+  .login-form {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0); /* Used to remove*/
     padding: 1.5rem 2rem 2rem;
     padding-bottom: 70px;
@@ -99,7 +111,7 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
   }
   /*pablo*/
-  .signin-image {
+  .login-image {
       width: 400px; /* Adjust size as needed */
       height: auto;
       margin-right: 50px; /* Space between the image and form */
@@ -112,4 +124,7 @@
     }
     i{
       border-bottom: 2px solid black;
+    }
+    .login-container input{
+      color:white;
     }

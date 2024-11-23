@@ -46,7 +46,9 @@ const Register = () => {
         {error && <p className="error-message">{error}</p>}
         <form onSubmit={handleSubmit} className="signup-form">
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+           {/* <label htmlFor="username">Username</label>*/}
+           <div className = 'input-icon'>
+           <i class='bx bx-user bx-md'></i>
             <input
               id="username"
               type="text"
@@ -56,9 +58,12 @@ const Register = () => {
               onChange={handleChange}
               required
             />
+            </div>
           </div>
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            {/*<label htmlFor="email">Email</label>*/}
+            <div className = 'input-icon'>
+            <i class='bx bx-envelope bx-md'></i>
             <input
               id="email"
               type="email"
@@ -68,9 +73,13 @@ const Register = () => {
               onChange={handleChange}
               required
             />
+            </div>
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            {/*<label htmlFor="password">Password</label>*/}
+
+            <div className = 'input-icon'>
+            <i class='bx bx-lock-alt bx-md'></i>
             <input
               id="password"
               type="password"
@@ -80,9 +89,12 @@ const Register = () => {
               onChange={handleChange}
               required
             />
+            </div>
           </div>
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            {/*<label htmlFor="confirmPassword">Confirm Password</label>*/}
+            <div className = 'input-icon'>
+            <i class='bx bxs-lock bx-md' ></i>
             <input
               id="confirmPassword"
               type="password"
@@ -92,13 +104,17 @@ const Register = () => {
               onChange={handleChange}
               required
             />
+            </div>
           </div>
           <button type="submit" className="submit-button">
             Sign Up
           </button>
         </form>
+        
       </div>
+      <img src="https://storage.googleapis.com/blue_penguin/default/Blue_Penguin_Pablo.png" alt="BluePenguin Pable" className="login-image" />
     </div>
+    
   );
 };
 
