@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../../api/api';
+import { useAuth } from '../../context/AuthContext';
 import './Register.css';
 
 const Register = () => {
@@ -12,6 +12,7 @@ const Register = () => {
   });
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { signUp } = useAuth();
 
   const handleChange = (e) => {
     setFormData({
@@ -30,12 +31,16 @@ const Register = () => {
 
     try {
       const { confirmPassword, ...registrationData } = formData;
-      const response = await authService.register(registrationData);
-      
-      localStorage.setItem('token', response.token);
+      const { data } = await signUp(registrationData.email, registrationData.password);
+
+      if (data?.user) {
+        localStorage.setItem('access_token', data.session.access_token);
+        localStorage.setItem('refresh_token', data.session.refresh_token);
+      }
+
       navigate('/login');
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to register');
     }
   };
 
