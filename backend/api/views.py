@@ -227,6 +227,14 @@ class SignInView(APIView):
                 }
             )
 
+            user = User.objects.get(email=email)
+            user_data = {
+                'email': user.email,
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+            }
+
             # cache session
             session_key = f'supabase_session_{auth_response.session.access_token}'
             session_data = {
@@ -241,7 +249,8 @@ class SignInView(APIView):
             )
 
             return Response(
-                {
+                {   
+                    'user': user_data,
                     'access_token': auth_response.session.access_token,
                     'refresh_token': auth_response.session.refresh_token,
                     'expires_at': auth_response.session.expires_at,
