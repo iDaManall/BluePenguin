@@ -32,7 +32,6 @@ const Login = () => {
 
   return (
     <div className="login-container">
-    
       <div className="login-box">
         <h2>Login</h2>
         {error && <p className="error-message">{error}</p>}
@@ -73,6 +72,7 @@ const Login = () => {
           </button>
         </form>
       </div>
+      
 
       <img src="https://storage.googleapis.com/blue_penguin/default/Blue_Penguin_Pablo.png" alt="BluePenguin Pable" className="login-image" />
     </div>

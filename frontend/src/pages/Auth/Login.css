@@ -4,13 +4,16 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    padding: 20px;
+    font: rgb(0, 0, 0);
+  }
+  .username{
+    font-size: 25px;
     font: white;
   }
 
-  .username{
-    font-size: px;
-    font: white;
+  ::placeholder{
+      color: rgb(252, 252, 252);
+      opacity: 1; /* Firefox */
   }
 
   .login-container #username{
@@ -49,7 +52,7 @@
     width: 100%;
     max-width: 28rem;
     background-color: rgba(0, 0, 0, 0.5);
-    border-radius: 45px;
+    border-radius: 25px;
     padding : 35px;
   }
   
@@ -117,14 +120,21 @@
       margin-right: 50px; /* Space between the image and form */
       border-radius: 3px;
     }
+
+    /* farewell pablo's ice ;(
     body{
       background: url('https://storage.googleapis.com/blue_penguin/default/wall_paper_2.jpg') no-repeat;
       background-size: cover;
       background-position: center;
-    }
+    }*/
+
     i{
       border-bottom: 2px solid black;
     }
     .login-container input{
       color:white;
     }
+    body{
+      background-color: white;
+    }
+  
