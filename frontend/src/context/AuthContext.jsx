@@ -31,6 +31,15 @@ export const AuthProvider = ({ children }) => {
     return data
   }
 
+  const signUp = async (email, password) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    if (error) throw error;
+    return data;
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
@@ -38,7 +47,7 @@ export const AuthProvider = ({ children }) => {
 
   // Provides these values to all child components. Renders the children only when the loading state is false.
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, loading }}>
+    <AuthContext.Provider value={{ user, signIn, signUp, signOut, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   )
