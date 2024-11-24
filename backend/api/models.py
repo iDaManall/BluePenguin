@@ -107,6 +107,23 @@ class Item(models.Model):
     def is_expired(self):
         return self.deadline < now()
     
+    def is_available(self):
+        return not self.is_exppired() and self.availability == AVAILABLE_CHOICE
+    
+    def select_winning_bid(self):
+        if self.is_expired() and self.total_bids > 0:
+            winning_bid = Bid.objects.filter(
+                item=self,
+                bid_price=self.highest_bid
+            ).order_by('time_of_bid').first()
+
+            if winning_bid:
+                self.winning_bid = winning_bid
+                self.availability = SOLD_CHOICE
+                self.save()
+                return winning_bid
+        return None
+    
 
 class Bid(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)

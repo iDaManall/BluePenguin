@@ -8,7 +8,9 @@ from django.core.mail import send_mail
 from django.urls import reverse
 from .utils import *
 from django.conf import settings
-from supabase_py import create_client
+from supabase import create_client
+
+from django.utils import timezone
 
 '''
 class UserSerializer(serializers.ModelSerializer):
@@ -88,6 +90,8 @@ class ShippingAddressSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     username = serializers.CharField(max_length=20)
     password = serializers.CharField(max_length=20, write_only=True)
+    display_name = serializers.CharField(required=False)
+    description = serializers.CharField(required=False)
 
     class Meta:
         model = Account
@@ -99,24 +103,13 @@ class RegisterSerializer(serializers.ModelSerializer):
     # create new account 
     def create(self, validated_data):
         try:
-            supabase = create_client(
-                settings.SUPABASE_URL,
-                settings.SUPABASE_SERVICE_ROLE_KEY,
-            )
-
-            supabase.auth.admin.create_user(
-                {
-                    'email': validated_data['email'],
-                    'password': validated_data['password'],
-                    'email_confirm': True 
-                }
-            )
-
-            username = validated_data.pop("username")
-            email = validated_data.pop("email")
-            first_name = validated_data.pop("first_name")
-            last_name = validated_data.pop("last_name")
-            password = validated_data.pop("password")
+            username = validated_data["username"]
+            email = validated_data["email"]
+            first_name = validated_data["first_name"]
+            last_name = validated_data["last_name"]
+            password = validated_data["password"]
+            display_name = validated_data["display_name"]
+            description = validated_data["description"]
 
             user = User.objects.create_user(username=username, 
                                         email=email, 
@@ -132,12 +125,24 @@ class RegisterSerializer(serializers.ModelSerializer):
             # create account
             account = Account.objects.create(user=user) # Note: **validated_data refers to everything you just validated
 
-            display_name = user.get_full_name()
-            description = None
+            profile = Profile.objects.create(account=account, 
+                                            display_name=display_name or user.get_full_name(), 
+                                            description=description)
 
-            profile = Profile.objects.create(account=account, display_name=display_name, description=description)
+            supabase = create_client(
+                settings.SUPABASE_URL,
+                settings.SUPABASE_SERVICE_ROLE_KEY,
+            )
 
-            return profile
+            supabase.auth.admin.create_user(
+                {
+                    'email': validated_data['email'],
+                    'password': validated_data['password'],
+                    'email_confirm': False 
+                }
+            )
+
+            return user
         except Exception as e:
             raise serializers.ValidationError(
                 f"Failed to create user: {str(e)}"
@@ -417,3 +422,48 @@ class DislikeSerializer(serializers.ModelSerializer):
         }
 
     
+class BidSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bid
+        fields = ['id', 'bid_price', 'item', 'time_of_bid', 'status']
+        extra_kwargs = {
+            'item': {'read_only': True},
+            'profile': {'read_only': True},
+            'time_of_bid': {'read_only': True},
+            'status': {'read_only': True},
+        }
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        item = self.context['item']
+        profile = user.account.profile
+
+        bid_price = validated_data['bid_price']
+        status = NOT_HIGHEST_CHOICE
+        validated_data['status'] = status
+
+        bid = Bid.objects.create(
+            profile=profile,
+            item=item,
+            bid_price=bid_price,
+            time_of_bid=timezone.now(),
+            status=status
+        )
+
+        return bid
+    
+class TransactionSerializer(serializers.ModelSerializer):
+    seller_username = serializers.CharField(source='seller.user.username', read_only=True)
+    buyer_username = serializers.CharField(source='buyer.user.username', read_only=True)
+    item_title = serializers.CharField(source='bid.item.title', read_only=True)
+    bid_amount = serializers.DecimalField(source='bid.bid_price', max_digits=6, decimal_places=2, read_only=True)
+    
+    class Meta:
+        model = Transaction
+        fields = ['id', 'seller_username', 'buyer_username', 'item_title', 'bid_amount', 'status', 'shipped', 'received',
+        ]
+        extra_kwargs = {
+            'status': {'read_only': True},  
+            'shipped': {'read_only': True}, 
+            'received': {'read_only': True}
+        }

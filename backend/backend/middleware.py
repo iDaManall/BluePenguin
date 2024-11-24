@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
-from supabase_py import create_client, Client
+from supabase import create_client, Client
 from django.conf import settings
 from django.core.cache import cache
 from api.models import *

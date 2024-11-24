@@ -11,6 +11,10 @@ google-cloud-storage
 django-filter
 cloud-sql-python-connector
 psycopg2-binary
-supabase-py 
+supabase
+gotrue
 python-jose 
 pyjwt
+celery
+redis
+django-celery-beat

@@ -3,12 +3,13 @@ from .serializers import *
 from .models import *
 from .permissions import *
 from .filters import *
+from .utils import EmailNotifications
 
 from django.shortcuts import render
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from django.db.models.aggregates import Avg, Count
-from django.utils.http import urlsafe_base64_encode
+from django.db.models.aggregates import Avg, Count, Max
+from django.utils import timezone
 from django.utils.encoding import force_str
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, viewsets, status
@@ -21,8 +22,11 @@ from rest_framework.exceptions import NotFound
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.views import APIView
 from django.conf import settings
-from supabase_py import create_client
+from supabase import create_client
 from django.core.cache import cache
+
+from decimal import Decimal
+from time import sleep
 
 
 '''
@@ -69,18 +73,17 @@ class AccountViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             try:
                 user = serializer.save() # this is supposed to call the create() method in the serializer
+                sleep(1)
 
                 supabase = create_client(
                     settings.SUPABASE_URL,
                     settings.SUPABASE_ANON_KEY
                 )
 
-                auth_response = supabase.auth.sign_in_with_password(
-                    {
-                        'email': user.email,
-                        'password': request.data['password'],
-                    }
-                )
+                auth_response = supabase.auth.sign_in_with_password({
+                                'email': request.data['email'],
+                                'password': request.data['password'],
+                })
 
                 return Response({
                     'user': serializer.data,
@@ -192,8 +195,74 @@ class AccountViewSet(viewsets.ModelViewSet):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 
-'''
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='view-transactions')
+    def view_transactions(self, request):
+        try:
+            seller_account = self.get_object()
+            seller_transactions = Transaction.objects.filter(seller=seller_account)
+            serializer = TransactionSerializer(seller_transactions, many=True)
+
+            return Response(
+                {
+                    'transactions': serializer.data,
+                    'count': seller_transactions.count()
+                }
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to fetch transactions: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='view-pending-bids')
+    def view_pending_bids(self, request):
+        try:
+            account = self.get_object()
+            profile = account.profile
+            pending_bids = Bid.objects.filter(profile=profile, item__availability=AVAILABLE_CHOICE).select_related('item')
+
+            serializer = BidSerializer(pending_bids, many=True)
+            return Response(
+                {
+                    'pending_bids': serializer.data,
+                    'count': pending_bids.count()
+                }
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to fetch transactions: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='view-awaiting-arrival')
+    def view_awaiting_arrivals(self, request):
+        try:
+            buyer_account = self.get_object()
+            transactions = Transaction.objects.filter(buyer=buyer_account, status__in=[PENDING_CHOICE, SHIPPED_CHOICE])
+
+            serializer = TransactionSerializer(transactions, many=True)
+            return Response(
+                {
+                    'awaiting_arrivals': serializer.data,
+                    'awaiting_arrivals_count': transactions.count()
+                }
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to fetch transactions: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    # next: seller shipping item
+    # next: buyer 'received' item
+
+
+
+''' 
 @api_view(['GET'])
 def verify_email(request, uidb64, token):
     try:
@@ -231,6 +300,14 @@ class SignInView(APIView):
                 }
             )
 
+            user = User.objects.get(email=email)
+            user_data = {
+                'email': user.email,
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+            }
+
             # cache session
             session_key = f'supabase_session_{auth_response.session.access_token}'
             session_data = {
@@ -245,7 +322,8 @@ class SignInView(APIView):
             )
 
             return Response(
-                {
+                {   
+                    'user': user_data,
                     'access_token': auth_response.session.access_token,
                     'refresh_token': auth_response.session.refresh_token,
                     'expires_at': auth_response.session.expires_at,
@@ -253,7 +331,7 @@ class SignInView(APIView):
             )
         except Exception as e:
             return Response(
-                {'error': 'Invalid credentials'},
+                {'error': f'Invalid credentials: {str(e)}'},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
@@ -542,4 +620,38 @@ class ItemViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, CanBidOn], url_path='perform-bid')
+    def place_bid(self, request, pk=None):
+        item = self.get_object()
+        user = request.user
+        account = user.account
+        if not item.is_available():
+            return Response({"error": "Bidding has ended"})
+        
+        bid_amount = Decimal(request.data.get('bid_price'))
+        if bid_amount <= item.highest_bid:
+            return Response({"error": "Bid must be higher than current bid."})
+        elif bid_amount <= account.balance:
+            return Response({"error": "Insufficient funds."})
+        
+        highest_bid = item.highest_bid
+        highest_bid_obj = Bid.objects.filter(item=item, bid_price=highest_bid).first()
+        serializer = BidSerializer(data=request.data, context={'request': request, 'item': item})
+        if serializer.is_valid():
+            bid = serializer.save()
+            curr_highest = Bid.objects.filter(item=item).order_by('-bid_price','time_of_bid').first()
+
+            if curr_highest == bid:
+                if highest_bid_obj:   
+                    EmailNotifications.notify_outbid(
+                        highest_bid_obj.profile.account.user,
+                        item,
+                        bid_amount
+                    )
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        
     

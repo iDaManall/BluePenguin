@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../../api/api';
+import { useAuth } from '../../context/AuthContext';
 import './Login.css';
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
-    username: '',
+    email: '',
     password: ''
   });
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { signIn } = useAuth();  // Get signIn from AuthContext
 
   const handleChange = (e) => {
     setCredentials({
@@ -20,13 +21,21 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);  // Clear any previous errors
     
     try {
-      const response = await authService.signin(credentials);
-      localStorage.setItem('token', response.token);
-      navigate('/dashboard');
+      const { data } = await signIn(credentials.email, credentials.password);
+
+      // Optional: Store any additional data you need
+      if (data?.session) {
+        localStorage.setItem('access_token', data.session.access_token);
+        localStorage.setItem('refresh_token', data.session.refresh_token);
+      }
+
+      navigate('/');
     } catch (err) {
-      setError('Invalid credentials');
+      console.error('Login error:', err);
+      setError(err.message || 'Failed to sign in');
     }
   };
 
@@ -60,11 +69,11 @@ const Login = () => {
             <div className= "input-icon">
             <i className='bx bx-user-pin bx-md'></i>
             <input
-              id="username"
-              type="text"
-              name="username"
-              placeholder="Username"
-              value={credentials.username}
+              id="email"
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={credentials.email}
               onChange={handleChange}
               required
             />
@@ -74,7 +83,7 @@ const Login = () => {
             
             {/*<label htmlFor="password">Password</label>*/}
             <div className= "input-icon">
-            <i class='bx bx-lock-alt bx-md'></i>
+            <i className='bx bx-lock-alt bx-md'></i>
             <input
               id="password"
               type="password"

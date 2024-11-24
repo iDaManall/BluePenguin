@@ -15,9 +15,11 @@ USER_STATUS_CHOICES = [
 
 AVAILABLE_CHOICE = 'A'
 SOLD_CHOICE = 'S'
+EXPIRED_CHOICE = 'E'
 AVAILABILITY_CHOICES = [
     (AVAILABLE_CHOICE, 'Available'),
-    (SOLD_CHOICE, 'Sold')
+    (SOLD_CHOICE, 'Sold'),
+    (EXPIRED_CHOICE, 'Expired'),
 ]
 
 
@@ -63,10 +65,12 @@ BID_STATUS_CHOICES = [
 # transaction status
 
 PENDING_CHOICE = 'P'
-COMPLETE_CHOICE = 'C'
+SHIPPED_CHOICE = 'C'
+RECEIVED_CHOICE = 'R'
 TRANSACTION_STATUS_CHOICES = [
     (PENDING_CHOICE, 'Pending'),
-    (COMPLETE_CHOICE, 'Complete')
+    (SHIPPED_CHOICE, 'Shipped'),
+    (RECEIVED_CHOICE, 'Received')
 ]
 
 # countries

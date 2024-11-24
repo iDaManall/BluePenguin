@@ -1,6 +1,7 @@
 from rest_framework.permissions import BasePermission
 from rest_framework import permissions
 from .models import *
+from .choices import *
     
 class IsOwner(BasePermission):
     def has_object_permission(self, request, obj):
@@ -31,11 +32,11 @@ class IsNotOwner(BasePermission):
     
 class CanBidOn(BasePermission):
     def has_object_permission(self, request, view, obj):
-        return obj.availability == 'A'
+        return obj.availability == AVAILABLE_CHOICE
     
 class IsNotVisitor(BasePermission):
     def has_object_permission(self, request, view, obj):
         user = request.user
         status = user.account.status
 
-        return status != 'V'
+        return status != STATUS_VISITOR
