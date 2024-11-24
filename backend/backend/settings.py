@@ -37,7 +37,7 @@ ALLOWED_HOSTS = ["*"] # will allow any different host to host our django applica
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-        "backend.middleware.SupabaseAuthMiddleware",
+        "backend.middleware.SupabaseAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
@@ -85,7 +85,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    'backend.middleware.SupabaseAuthMiddleware',
+    'backend.middleware.SupabaseMiddleware',
 ]
 
 SUPABASE_URL = os.getenv('SUPABASE_URL')

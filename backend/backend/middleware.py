@@ -7,7 +7,15 @@ from django.conf import settings
 from django.core.cache import cache
 from api.models import *
 
-class SupabaseAuthMiddleware(BaseAuthentication):
+class SupabaseMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        return response
+
+class SupabaseAuthentication(BaseAuthentication):
     def authenticate(self, request):
         auth_header = request.META.get('HTTP_AUTHORIZATION')
         if not auth_header or not auth_header.startswith('Bearer '):
