@@ -18,3 +18,4 @@ pyjwt
 celery
 redis
 django-celery-beat
+shippo

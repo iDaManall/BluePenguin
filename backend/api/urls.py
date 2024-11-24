@@ -7,7 +7,7 @@ router = DefaultRouter()
 router.register(r'accounts', AccountViewSet, basename='account')
 router.register(r'profiles', ProfileViewSet, basename='profile')
 router.register(r'items', ItemViewSet, basename='item')
-# /api/accounts/register
+router.register(r'transactions', TransactionViewSet, basename='transaction')
 
 urlpatterns = [
     # auth routes

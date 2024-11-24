@@ -45,6 +45,9 @@ class ShippingAddress(models.Model):
     zip = models.TextField(blank=True)
     country = models.TextField(max_length=255, choices=COUNTRY_CHOICES)
 
+    def __str__(self):
+        return f"{self.street_address} {self.city}, {self.state} {self.zip}, {self.country}"
+
 
 class Account(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -138,6 +141,9 @@ class Transaction(models.Model):
     buyer = models.OneToOneField(Account, on_delete=models.CASCADE, related_name='won')
     bid = models.OneToOneField(Bid, on_delete=models.PROTECT)
     status = models.CharField(max_length=1, choices=TRANSACTION_STATUS_CHOICES, default=PENDING_CHOICE)
+    estimated_delivery = models.DateField(null=True, blank=True, default=None)
+    carrier = models.CharField(null=True, blank=True, default=None)
+    shipping_cost = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
 
 
 class Rating(models.Model):
@@ -172,7 +178,14 @@ class Report(models.Model):
     reportee = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='reports_received')
     report = models.TextField(max_length=1000)
 
-
+class Parcel(models.Model):
+    transaction = models.OneToOneField(Transaction, on_delete=models.CASCADE)
+    length = models.DecimalField(max_digits=5, decimal_places=2)
+    width = models.DecimalField(max_digits=5, decimal_places=2)
+    height = models.DecimalField(max_digits=5, decimal_places=2)
+    weight = models.DecimalField(max_digits=5, decimal_places=2)
+    distance_unit = models.CharField(max_length=2, choices=DISTANCE_UNIT_CHOICES, default=INCH_CHOICE)
+    weight_unit = models.CharField(max_length=2, choices=WEIGHT_UNIT_CHOICES, default=POUND_CHOICE)
 
 
 

@@ -200,3 +200,5 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
 }
+
+SHIPPO_API_KEY = os.getenv('SHIPPO_API_KEY')

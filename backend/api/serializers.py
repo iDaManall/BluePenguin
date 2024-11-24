@@ -257,7 +257,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Item
-        fields = ['title', 'username', 'display_icon' 'description', 'deadline', 'collection', 'image', 'selling_price']
+        fields = ['title', 'username', 'display_icon' 'description', 'deadline', 'collection', 'image', 'selling_price', 'profile']
         extra_kwargs = {
             "username": {"read_only": True},
             "display_icon": {"read_only": True}
@@ -460,10 +460,25 @@ class TransactionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Transaction
-        fields = ['id', 'seller_username', 'buyer_username', 'item_title', 'bid_amount', 'status', 'shipped', 'received',
-        ]
+        fields = ['id', 'seller_username', 'buyer_username', 'item_title', 'bid_amount', 'status', 'estimated_delivery', 'carrier', 'shipping_cost']
         extra_kwargs = {
             'status': {'read_only': True},  
-            'shipped': {'read_only': True}, 
-            'received': {'read_only': True}
+            'estimated_delivery': {'read_only': True}, 
+            'carrier': {'read_only': True},
+            'shipping_cost': {'read_only': True},
         }
+
+class ParcelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Parcel
+        fields = ['item', 'length', 'width', 'height', 'weight', 'distance_unit', 'weight_unit']
+        extra_kwargs = {
+            "item": {"read_only": True}
+        }
+
+
+    def create(self, validated_data):
+        transaction = self.context['transaction']
+        validated_data['transaction'] = transaction
+        parcel = Parcel.objects.create(**validated_data)
+        return parcel

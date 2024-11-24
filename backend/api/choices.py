@@ -73,6 +73,23 @@ TRANSACTION_STATUS_CHOICES = [
     (RECEIVED_CHOICE, 'Received')
 ]
 
+# parcel measurement units
+INCH_CHOICE = 'in'
+CM_CHOICE = 'cm'
+POUND_CHOICE = 'lb'
+KG_CHOICE = 'kg'
+
+DISTANCE_UNIT_CHOICES = [
+    (INCH_CHOICE, 'Inches'),
+    (CM_CHOICE, 'Centimeters'),
+]
+
+WEIGHT_UNIT_CHOICES = [
+    (POUND_CHOICE, 'Pounds'),
+    (KG_CHOICE, 'kilograms')
+]
+
+
 # countries
 
 COUNTRY_CHOICES = [

@@ -27,6 +27,7 @@ from django.core.cache import cache
 
 from decimal import Decimal
 from time import sleep
+import shippo
 
 
 '''
@@ -106,9 +107,8 @@ class AccountViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
     # set shipping address
-    @action(detail=True, methods=['post', 'patch'], permission_classes=[IsAuthenticated, IsOwner], url_path='set-shipping-address')
+    @action(detail=True, methods=['post', 'patch'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor], url_path='set-shipping-address')
     def set_shipping_address(self, request, pk=None):
         account = self.get_object(pk)
 
@@ -132,9 +132,8 @@ class AccountViewSet(viewsets.ModelViewSet):
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    
     # set card details
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsOwner], url_path='set-card-details')
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor], url_path='set-card-details')
     # if detail=True, this means the URL would include {pk}/set-card-details
     def set_card_details(self, request):
         account = self.get_object()
@@ -167,9 +166,8 @@ class AccountViewSet(viewsets.ModelViewSet):
                     return Response({"error": "Card number already in use"}, status=status.HTTP_400_BAD_REQUEST)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-
     # set paypal details
-    @action(detail=True, methods=['post', 'patch'], permission_classes=[IsAuthenticated, IsOwner], url_path='set-paypal-details')
+    @action(detail=True, methods=['post', 'patch'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor], url_path='set-paypal-details')
     def update_paypal_details(self, request, pk=None):
         account = self.get_object()
 
@@ -196,28 +194,7 @@ class AccountViewSet(viewsets.ModelViewSet):
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-
-    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='view-transactions')
-    def view_transactions(self, request):
-        try:
-            seller_account = self.get_object()
-            seller_transactions = Transaction.objects.filter(seller=seller_account)
-            serializer = TransactionSerializer(seller_transactions, many=True)
-
-            return Response(
-                {
-                    'transactions': serializer.data,
-                    'count': seller_transactions.count()
-                }
-            )
-        except Exception as e:
-            return Response(
-                {"error": f"Failed to fetch transactions: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-    
-
-    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='view-pending-bids')
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsNotVisitor], url_path='view-pending-bids')
     def view_pending_bids(self, request):
         try:
             account = self.get_object()
@@ -236,48 +213,6 @@ class AccountViewSet(viewsets.ModelViewSet):
                 {"error": f"Failed to fetch transactions: {str(e)}"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-    
-
-    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='view-awaiting-arrival')
-    def view_awaiting_arrivals(self, request):
-        try:
-            buyer_account = self.get_object()
-            transactions = Transaction.objects.filter(buyer=buyer_account, status__in=[PENDING_CHOICE, SHIPPED_CHOICE])
-
-            serializer = TransactionSerializer(transactions, many=True)
-            return Response(
-                {
-                    'awaiting_arrivals': serializer.data,
-                    'awaiting_arrivals_count': transactions.count()
-                }
-            )
-        except Exception as e:
-            return Response(
-                {"error": f"Failed to fetch transactions: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-    
-    # next: seller shipping item
-    # next: buyer 'received' item
-
-
-
-''' 
-@api_view(['GET'])
-def verify_email(request, uidb64, token):
-    try:
-        uid = force_str(urlsafe_base64_encode(uidb64))
-        account = Account.objects.get(pk=uid)
-    except Exception as e:
-        account = None
-    
-    if account and default_token_generator.check_token(account, token):
-        account.is_verified = True
-        account.save()
-        return Response({"message": "Email verified successfully"}, status=status.HTTP_200_OK)
-    else:
-        return Response({"error": "Email verification failed."}, status=status.HTTP_400_BAD_REQUEST)
-'''
 
 class SignInView(APIView):
     permission_classes = [AllowAny]
@@ -365,7 +300,7 @@ class SignOutView(APIView):
 # profile view 
 class ProfileViewSet(viewsets.ModelViewSet):
     queryset = Profile.objects.all()
-    serializer = ProfileSerializer
+    serializer_class = ProfileSerializer
     permission_classes = [IsAuthenticated]
 
     # view profile
@@ -394,9 +329,18 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # /api/profiles/rate-profile
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotOwner], url_path='rate-profile')
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotOwner, IsNotVisitor], url_path='rate-profile')
     def rate_profile(self, request, pk=None):
         ratee = self.get_object()
+        ratee_account = ratee.account
+        rater_account = request.user.account
+        rater_transactions_as_seller = Transaction.objects.filter(seller=rater_account, buyer=ratee)
+        rater_transactions_as_buyer = Transaction.objects.filter(seller=ratee_account, buyer=rater_account)
+
+        if not rater_transactions_as_seller.exists() and not rater_transactions_as_buyer.exists():
+            return Response({
+                "message": "You cannot rate this user as you have not performed any transactions with them."
+            }, status=status.HTTP_403_FORBIDDEN)
 
         serializer = RatingSerializer(data=request.data, context={"request": request, "ratee": ratee})
 
@@ -410,7 +354,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # /api/profiles/saves
-    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='saves')
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsSaveOwner], url_path='saves')
     def view_saves(self, request):
         profile = self.get_object()
         saves = Save.objects.filter(profile=profile)
@@ -419,7 +363,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     # /api/profiles/delete-saved-item
-    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsOwner], url_path='delete-saved-item')
+    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsSaveOwner], url_path='delete-saved-item')
     def delete_save(self, request):
         save_id = request.data.get('id', None)
 
@@ -433,9 +377,21 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
     
     # /api/profiles/report-user
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='report-user')
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor], url_path='report-user')
     def report(self, request):
         reportee = self.get_object()
+        reportee_account = reportee.account
+        reporter_account = request.user.account
+
+        completed_transactions = Transaction.objects.filter(seller=reportee_account, buyer=reporter_account)
+
+        if not completed_transactions.exists():
+            return Response(
+                {
+                    "message": "You cannot report this user since you have not performed any transactions with them."
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         serializer = ReportSerializer(data=request.data, context={"request": request, "reportee": reportee})
 
@@ -443,12 +399,30 @@ class ProfileViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsVisitor], url_path='apply-to-be-user')
+    def apply_to_be_user(self, request, pk=None):
+        # get captcha
+        if request.method == 'GET':
+            question_data = generate_random_arithmetic_question()
+            request.session['captcha_answer'] = question_data['answer']
+            return Response({
+                "question": question_data['question']
+            })
+        # verify captcha
+        elif request.method == 'POST':
+            user_answer = request.data.get('answer')
+            actual_answer = request.session.get('captcha_answer')
+
+            if int(user_answer) == actual_answer:
+                return Response({"valid": True})
+            return Response({"valid": False})
 
 
 # now work on item views
 class ItemViewSet(viewsets.ModelViewSet):
     queryset = Item.objects.all()
-    serializer_class = ItemSerializer()
+    serializer_class = ItemSerializer
     search_fields = ['title', 'description', 'collection']
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = ItemFilter
@@ -485,7 +459,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         return super().retrieve(request, *args, **kwargs)
     
     # /api/items/{pk}/delete-item
-    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsOwner], url_path='delete-item')
+    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor], url_path='delete-item')
     def delete_item(self, request, pk=None):
         item = self.get_object()
         item.delete()
@@ -524,15 +498,15 @@ class ItemViewSet(viewsets.ModelViewSet):
 
         serializer = CommentSerializer(data=request.data, context={'request': request, 'item': item, 'parent': parent})
 
-        if serializer.valid():
+        if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # /api/items/{pk}/replies
+    # /api/items/{pk}/replies/?parent=<id>
     @action(detail=True, methods=['get'], permission_classes=[AllowAny], url_path='replies')
     def view_replies(self, request):
-        parent_id = request.data.get('parent', None)
+        parent_id = request.query_params.get('parent', None)
         parent = Comment.objects.get(id=parent_id)
         replies = Comment.objects.filter(parent=parent)
 
@@ -540,7 +514,7 @@ class ItemViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
     
-    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsOwner], url_path='delete-comment')
+    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsCommentOwner], url_path='delete-comment')
     def delete_comment(self, request):
         comment_id = request.data.get('id', None)
 
@@ -552,9 +526,9 @@ class ItemViewSet(viewsets.ModelViewSet):
         comment.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
-    @action(detail=True, methods=['post', 'delete'], permission_classes=['IsAuthenticated'], url_path='like-comment')
+    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated], url_path='like-comment')
     def like_comment(self, request):
-            comment_id = request.get.data('id', None)
+            comment_id = request.data.get('id', None)
 
             try:
                 comment = Comment.objects.get(id=comment_id)
@@ -581,9 +555,9 @@ class ItemViewSet(viewsets.ModelViewSet):
 
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['post'], permission_classes=['IsAuthenticated'], url_path='dislike-comment')
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='dislike-comment')
     def dislike_comment(self, request):
-        comment_id = request.get.data('id', None)
+        comment_id = request.data.get('id', None)
 
         try:
             comment = Comment.objects.get(id=comment_id)
@@ -601,11 +575,11 @@ class ItemViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
         
         elif request.method == 'DELETE':
-            like = Like.objects.filter(comment=comment, user=request.user).first()
-            like.delete()
+            dislike = Like.objects.filter(comment=comment, user=request.user).first()
+            dislike.delete()
 
-            likes_count = Like.objects.filter(comment=comment).aggregate(Count('id'))
-            comment.likes = likes_count
+            dislikes_count = Like.objects.filter(comment=comment).aggregate(Count('id'))
+            comment.dislikes = dislikes_count
             comment.save()
 
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -621,7 +595,7 @@ class ItemViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, CanBidOn], url_path='perform-bid')
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, CanBidOn, IsNotVisitor, IsNotSeller], url_path='perform-bid')
     def place_bid(self, request, pk=None):
         item = self.get_object()
         user = request.user
@@ -633,7 +607,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         if bid_amount <= item.highest_bid:
             return Response({"error": "Bid must be higher than current bid."})
         elif bid_amount <= account.balance:
-            return Response({"error": "Insufficient funds."})
+            return Response({"error": "Insufficient funds."}, status=status.HTTP_402_PAYMENT_REQUIRED)
         
         highest_bid = item.highest_bid
         highest_bid_obj = Bid.objects.filter(item=item, bid_price=highest_bid).first()
@@ -652,6 +626,245 @@ class ItemViewSet(viewsets.ModelViewSet):
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    # next make a choice to change bid deadline and/or complete bid
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor], url_path='change-deadline')
+    def change_deadline(self, request, pk=None):
+        try:
+            item = self.get_object()
 
-        
+            if item.availability != AVAILABLE_CHOICE:
+                return Response({
+                "error": "Cannot change deadline for items that are sold or expired"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+            new_deadline = request.data.get('deadline')
+            new_deadline_dt = timezone.datetime.strptime(new_deadline, "%Y-%m-%d %H:%M:%S")
+            if new_deadline_dt <= timezone.now():
+                return Response({
+                    "error": "New deadline must be in the future"
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
+            item.deadline = new_deadline_dt
+            item.save()
+
+            bidders = User.objects.filter(account__profile__bid__item=item).distinct()
+
+            for bidder in bidders:
+                EmailNotifications.notify_deadline_changed(
+                    bidder, 
+                    item, 
+                    new_deadline_dt
+                )
+
+            return Response({
+                "message": "Deadline successfully changed."
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                "error": f"Failed to change deadline: {str(e)}"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TransactionViewSet(viewsets.ModelViewSet):
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSerializer
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsNotVisitor], url_path='seller-transactions')
+    def view_transactions(self, request):
+        try:
+            seller_account = request.user.account
+            seller_transactions = Transaction.objects.filter(seller=seller_account)
+            serializer = self.get_serializer(seller_transactions, many=True)
+
+            return Response({
+                'transactions': serializer.data,
+                'count': seller_transactions.count()
+            })
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to fetch transactions: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsNotVisitor], url_path='awaiting-arrival')
+    def view_awaiting_arrivals(self, request):
+        try:
+            buyer_account = request.user.account
+            transactions = Transaction.objects.filter(
+                buyer=buyer_account, 
+                status__in=[PENDING_CHOICE, SHIPPED_CHOICE]
+            )
+            serializer = self.get_serializer(transactions, many=True)
+
+            return Response({
+                'awaiting_arrivals': serializer.data,
+                'count': transactions.count()
+            })
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to fetch transactions: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsNotVisitor], url_path='next-actions')
+    def view_next_actions(self, request):
+        try:
+            account = request.user.account
+            to_ship = Transaction.objects.filter(
+                seller=account,
+                status=PENDING_CHOICE
+            )
+            awaiting = Transaction.objects.filter(
+                buyer=account,
+                status__in=[PENDING_CHOICE, SHIPPED_CHOICE]
+            )
+
+            to_ship_serializer = self.get_serializer(to_ship, many=True)
+            awaiting_serializer = self.get_serializer(awaiting, many=True)
+
+            return Response({
+                'to_ship': to_ship_serializer.data,
+                'to_ship_count': to_ship.count(),
+                'awaiting_arrival': awaiting_serializer.data,
+                'awaiting_count': awaiting.count()
+            })
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to fetch actions: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor, IsSeller], url_path='ship')
+    def ship_item(self, request, pk=None):
+        try:
+            transaction = self.get_object()
+            seller_account = transaction.seller
+            seller_address = seller_account.shipping_address
+            buyer_account = transaction.buyer
+            buyer_address = buyer_account.shipping_address
+
+            if not seller_address or not buyer_address:
+                return Response(
+                    {"error": "Both seller and buyer must have shipping addresses"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            serializer = ParcelSerializer(data=request.data, context={"transaction": transaction})
+            if serializer.is_valid():
+                parcel = serializer.save()
+                parcel = serializer.save()
+            shippo.api_key = settings.SHIPPO_API_KEY
+
+            shipment = shippo.Shipments.create(
+                address_from={
+                    "name": seller_account.user.get_full_name(),
+                    "street1": seller_address.street_address,
+                    "city": seller_address.city,
+                    "state": seller_address.state,
+                    "zip": seller_address.zip,
+                    "country": seller_address.country,
+                },
+                address_to={
+                    "name": buyer_account.user.get_full_name(),
+                    "street1": buyer_address.street_address,
+                    "city": buyer_address.city,
+                    "state": buyer_address.state,
+                    "zip": buyer_address.zip,
+                    "country": buyer_address.country,
+                },
+                parcels=[
+                    {
+                        "length": str(parcel.length),
+                        "width": str(parcel.width),
+                        "height": str(parcel.height),
+                        "distance_unit": parcel.distance_unit,
+                        "weight": str(parcel.weight),
+                        "mass_unit": parcel.weight_unit,
+                    }
+                ],
+                async_=False
+            )
+
+            rates = shipment.rates
+            selected_rate = rates[0]
+
+            transaction.status = SHIPPED_CHOICE
+            transaction.carrier = selected_rate['provider']
+            transaction.shipping_cost = selected_rate['amount']
+
+            estimated_days = selected_rate.get('estimated_days', "N/A")
+            if estimated_days != "N/A":
+                estimated_delivery = datetime.now() + timedelta(days=estimated_days)
+                estimated_delivery = estimated_delivery.strftime("%Y-%m-%d")
+            else:
+                estimated_delivery = "Unknown"
+            
+            transaction.estimated_delivery = estimated_delivery
+
+            transaction.save()
+
+            EmailNotifications.notify_item_shipped(
+                buyer_account.user,
+                transaction.bid.item,
+                seller_account,
+                transaction.estimated_delivery,
+                transaction.carrier,
+                transaction.shipping_cost,
+            )
+            
+            return Response({
+                "message": f"Item is marked as shipped.",
+                "transaction": {
+                    "id": transaction_id,
+                    "item": transaction.bid.item.title,
+                    "seller": seller_account.user.username,
+                    "bidder": buyer_account.user.username,
+                    "shipping_to": str(buyer_address),
+                    "shipping_from": str(seller_address),
+                    "estimated_delivery": transaction.estimated_delivery,
+                    "carrier": transaction.carrier,
+                    "shipping_cost": transaction.shipping_cost
+                }
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to process shipping: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    # if you have received the item, mark as received
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsBuyer], url_path='received-item')
+    def received_item(self, request, pk=None):
+        try: 
+            transaction = self.get_object()
+
+            transaction.status = RECEIVED_CHOICE
+            transaction.save()
+
+            EmailNotifications.notify_item_received(
+                transaction.seller.user,
+                transaction.bid.item,
+                transaction.buyer
+            )
+
+            return Response(
+                {
+                    "message": "Item has been marked as received",
+                    "transaction": {
+                        "id": transaction.id,
+                        "item": transaction.bid.item.title,
+                        "status": RECEIVED_CHOICE
+                    }
+                }, status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to mark item as received: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
     

@@ -62,6 +62,9 @@ def check_auction_deadlines():
                 winning_bid.bid_price,
             )
 
+            item.availability=SOLD_CHOICE
+            item.save()
+
         else:
             item.availability=EXPIRED_CHOICE
             item.save()
@@ -70,5 +73,17 @@ def check_auction_deadlines():
             item.profile.account.user,
             item,
         )
+    
+    # item has arrived
+    transactions_items_arrived = Transaction.objects.filter(estimated_delivery__lte=timezone.now, status=SHIPPED_CHOICE)
+    for transaction in transactions_items_arrived:
+        buyer_user = transaction.buyer.user
+        item = transaction.bid.item
+
+        EmailNotifications.notify_item_arrived(
+            buyer_user, 
+            item,
+        )
+
 
         
