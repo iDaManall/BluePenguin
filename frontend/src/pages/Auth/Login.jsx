@@ -40,12 +40,30 @@ const Login = () => {
   };
 
   return (
-    <div className="signin-container">
-    
-      <div className="signin-box">
-        <h2>Sign In</h2>
+    <div>
+      <nav class = "nav-bar">
+          <div class = "logo">
+            <a href="#">BLUEPENGUIN</a>
+          </div>
+          <ul>
+            <li> <a href = "#" ><i class='bx hover-action bx-menu' ></i> Catergories</a></li>
+          </ul>
+          <div class = 'search-bar'>
+            <input type ='text' placeholder= "Search..." id = "search-input"></input>
+            <button type = 'submit' class ="search-btn"><i class='bx bxs-search-alt-2' ></i></button>
+          </div>
+          <ul><li> <a href = "#" class = "Account-Login">My Account</a></li></ul>
+          
+          <ul><li> <a href = '#' class = 'cart'><i class='bx  hover-action bxs-cart bx-md'></i></a></li></ul>
+         
+      </nav>
+
+
+    <div className="login-container">
+      <div className="login-box">
+        <h2>Login</h2>
         {error && <p className="error-message">{error}</p>}
-        <form onSubmit={handleSubmit} className="signin-form">
+        <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
            {/*  <label htmlFor="username">Username</label>*/}
             <div className= "input-icon">
@@ -78,12 +96,14 @@ const Login = () => {
             </div>
           </div>
           <button type="submit" className="submit-button">
-            Sign In
+            Login
           </button>
         </form>
       </div>
+      
 
-      <img src="https://storage.googleapis.com/blue_penguin/default/Blue_Penguin_Pablo.png" alt="BluePenguin Pable" className="signin-image" />
+      <img src="https://storage.googleapis.com/blue_penguin/default/Blue_Penguin_Pablo.png" alt="BluePenguin Pable" className="login-image" />
+    </div>
     </div>
   );
 };
