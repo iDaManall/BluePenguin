@@ -28,22 +28,23 @@ const apiFetch = async (endpoint, method = "GET", body = null, token = null) => 
   const headers = {
     "Content-Type": "application/json",
   };
+  
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
   
   try {
-    const config = {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
       method,
       headers,
       body: body ? JSON.stringify(body) : null,
-    };
-
-    const response = await fetch(`${BASE_URL}${endpoint}`, config);
+      credentials: 'include',
+      mode: 'cors'  // Add this line
+    });
 
     if (!response.ok) {
-      const errorBody = await response.text();
-      throw new Error(`API Error: ${response.status} - ${errorBody}`);
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'API request failed');
     }
 
     return response.status !== 204 ? await response.json() : null;

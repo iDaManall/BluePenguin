@@ -16,10 +16,11 @@ from dotenv import load_dotenv
 import os
 from google.cloud import storage
 
-load_dotenv() # load an environment file so we can use it for credentials, etc.
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(os.path.join(BASE_DIR, '.env')) # load an environment file so we can use it for credentials, etc.
 
 
 # Quick-start development settings - unsuitable for production
@@ -77,6 +78,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # Move this to the top
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -84,13 +86,17 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'backend.middleware.SupabaseMiddleware',
 ]
 
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY')
 SUPABASE_SERVICE_ROLE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+
+if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+    raise ValueError("Supabase credentials not properly configured in environment")
+
+print(f"Supabase URL configured: {SUPABASE_URL[:20]}...")  # Log partial URL for verification
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -172,10 +178,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # or whatever port your Vite server is running on
+    "http://127.0.0.1:5173",
+
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOWS_CREDENTIALS = True
+CORS_ALLOW_CREDENTIALS = True
 
 # Google Cloud Storage Configuration
 GOOGLE_CLOUD_PROJECT_ID = os.getenv('GOOGLE_CLOUD_PROJECT_ID')

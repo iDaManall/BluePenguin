@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../utils/client'
+import { authService } from '../api/api';
 
 const AuthContext = createContext({})
 
@@ -23,26 +24,73 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   const signIn = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    if (error) throw error
-    return data
+    try {
+      // First authenticate with Django
+      const djangoResponse = await authService.signin({email, password});
+      
+      if (!djangoResponse) {
+        throw new Error('Failed to authenticate with backend');
+      }
+  
+      // Then authenticate with Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+  
+      if (error) throw error;
+      
+      return {...data, djangoUser: djangoResponse};
+    } catch (error) {
+      console.error('Authentication error:', error);
+      throw error;
+    }
   }
 
-  const signUp = async (email, password) => {
+  // const signIn = async (email, password) => {
+  //   try {
+  //     const response = await axios.post(AUTH_ENDPOINTS.SIGNIN, { email, password });
+  //     const { access_token, refresh_token } = response.data;
+
+  //     // Store tokens in local storage
+  //     localStorage.setItem('access_token', access_token);
+  //     localStorage.setItem('refresh_token', refresh_token);
+
+  //     // Fetch user data from Supabase
+  //     const { data, error } = await supabase.auth.getUser(access_token);
+  //     if (error) throw error;
+
+  //     setUser(data.user);
+  //     return data;
+  //   } catch (error) {
+  //     throw new Error('Invalid login credentials');
+  //   }
+  // };
+
+  const signUp = async (email, password, username, ...otherData) => {
+    // First register with django
+    const djangoResponse = await authService.register({
+      email,
+      password,
+      username,
+      ...otherData
+    });
+
+    // Then we create Supabase account
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
     if (error) throw error;
-    return data;
+    return {...data, djangoUser: djangoResponse };
   };
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    if (error) throw error;
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    setUser(null);
   }
 
   // Provides these values to all child components. Renders the children only when the loading state is false.

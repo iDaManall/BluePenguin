@@ -272,15 +272,30 @@ class SignInView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        email = request.data.get('email')
-        password = request.data.get('password')
-
         try:
-            supabase = create_client(
-                settings.SUPABASE_URL,
-                settings.SUPABASE_ANON_KEY,
-            )
+            email = request.data.get('email')
+            password = request.data.get('password')
 
+            if not email or not password:
+                return Response(
+                    {'error': 'Email and password are required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Add error handling for Supabase client creation
+            try:
+                supabase = create_client(
+                    settings.SUPABASE_URL,
+                    settings.SUPABASE_ANON_KEY,
+                )
+            except Exception as e:
+                print(f"Supabase client creation error: {str(e)}")
+                return Response(
+                    {'error': 'Authentication service unavailable'},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
+
+            print("Attempting Supabase authentication...")
             # sign in, get session
             auth_response = supabase.auth.sign_in_with_password(
                 {
@@ -288,6 +303,7 @@ class SignInView(APIView):
                     'password': password,
                 }
             )
+            print("Supabase authentication successful")
 
             user = User.objects.get(email=email)
             user_data = {
@@ -297,7 +313,7 @@ class SignInView(APIView):
                 'last_name': user.last_name,
             }
 
-            return Response(
+            response = Response(
                 {   
                     'user': user_data,
                     'access_token': auth_response.session.access_token,
@@ -305,7 +321,13 @@ class SignInView(APIView):
                     'expires_at': auth_response.session.expires_at,
                 }
             )
+
+            # Set CORS headers explicitly
+            response["Access-Control-Allow-Credentials"] = "true"
+            return response
+        
         except Exception as e:
+            print(f"Sign-in error: {str(e)}")  # Add detailed logging
             return Response(
                 {'error': f'Invalid credentials: {str(e)}'},
                 status=status.HTTP_401_UNAUTHORIZED,
