@@ -89,6 +89,17 @@ WEIGHT_UNIT_CHOICES = [
     (KG_CHOICE, 'kilograms')
 ]
 
+# report status
+REQUEST_PENDING_CHOICE = 'P'
+REQUEST_APPROVED_CHOICE = 'A'
+REQUEST_REJECTED_CHOICE = 'R'
+
+REQUEST_STATUS_CHOICES = [
+    (REQUEST_PENDING_CHOICE, 'Pending'),
+    (REQUEST_APPROVED_CHOICE, 'Approved'),
+    (REQUEST_REJECTED_CHOICE, 'Rejected')
+]
+
 
 # countries
 

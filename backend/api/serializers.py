@@ -485,3 +485,28 @@ class ParcelSerializer(serializers.ModelSerializer):
         validated_data['transaction'] = transaction
         parcel = Parcel.objects.create(**validated_data)
         return parcel 
+    
+class QuitRequestSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='account.user.username', read_only=True)
+    email = serializers.CharField(source='account.user.email', read_only=True)
+    class Meta:
+        model = QuitRequest
+        fields = ['username', 'email', 'reason', 'status']
+        extra_kwargs = {
+            "username": {"read_only": True},
+            "email": {"read_only": True},
+            "status": {"read_only": True},
+        }
+
+    def create(self, validated_data):
+        username = self.context['username']
+        email = self.context['email']
+        reason = self.context['reason']
+
+        validated_data['username'] = username
+        validated_data['email'] = email
+        validated_data['reason'] = reason
+
+        quitrequest = QuitRequest.objects.create(**validated_data)
+
+        return quitrequest

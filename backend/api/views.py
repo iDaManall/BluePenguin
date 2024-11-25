@@ -267,6 +267,33 @@ class AccountViewSet(viewsets.ModelViewSet):
                 'message': 'Fine paid successfully.',
             }
         )
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor, IsNotSuspended], url_path='request-quit')
+    def request_quit(self, request, pk=None):
+        user = request.user
+        account = user.account
+
+        existing_request = QuitRequest.objects.filter(
+            account=account,
+            status=REQUEST_PENDING_CHOICE
+        ).exists()
+        
+        if existing_request:
+            return Response(
+                {"error": "You already have a pending quit request"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        username = user.username
+        email = user.email
+        reason = request.data.get('reason')
+        if reason:
+            serializer = QuitRequestSerializer(request.data, context={"request": request, "username": username, "email": email, "reason": reason})
+            if serializer.is_valid():
+                serializer.save()
+                EmailNotifications.notify_quit_application_received(user)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class SignInView(APIView):
     permission_classes = [AllowAny]
