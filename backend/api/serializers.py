@@ -88,21 +88,15 @@ class ShippingAddressSerializer(serializers.ModelSerializer):
         return instance 
 
 
-class RegisterSerializer(serializers.ModelSerializer):
+class RegisterSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=20)
+    email = serializers.EmailField()
     password = serializers.CharField(max_length=20, write_only=True)
-    display_name = serializers.CharField(required=False)
-    description = serializers.CharField(required=False)
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
 
-    class Meta:
-        model = Account
-        fields = ["first_name", "last_name", "username", "email", "password", "display_name", "description"]
-        extra_kwargs = { 
-            "password": {"write_only": True}
-        }
-
-    # create new account 
     def create(self, validated_data):
+        supabase_user = None
         try:
             # First create Supabase user
             supabase = create_client(
@@ -110,38 +104,50 @@ class RegisterSerializer(serializers.ModelSerializer):
                 settings.SUPABASE_SERVICE_ROLE_KEY,
             )
 
-            supabase_user = supabase.auth.admin.create_user({
+            print("Creating Supabase user...")
+            supabase_response = supabase.auth.admin.create_user({
                 'email': validated_data['email'],
                 'password': validated_data['password'],
-                'email_confirm': False 
+                'email_confirm': True
             })
+            # Convert generator to user data
+            supabase_user = next(iter(supabase_response))
+            print(f"Supabase user created: {supabase_user}")
 
-            # If Supabase succeeds, create Django models in a transaction
+            # Use transaction to ensure all Django models are created or none
             with transaction.atomic():
+                print("Creating Django user...")
                 user = User.objects.create_user(
                     username=validated_data["username"],
                     email=validated_data["email"],
+                    password=validated_data["password"],  # create_user handles password hashing
                     first_name=validated_data["first_name"],
                     last_name=validated_data["last_name"]
                 )
-                user.set_password(validated_data["password"])
-                user.save()
+                print(f"Django user created: {user}")
 
+                print("Creating Account and Profile...")
                 account = Account.objects.create(user=user)
+                
+                display_name = f"{validated_data['first_name']} {validated_data['last_name']}"
                 profile = Profile.objects.create(
                     account=account,
-                    display_name=validated_data.get("display_name") or user.get_full_name(),
-                    description=validated_data.get("description")
+                    display_name=display_name,
+                    description=""
                 )
+                print("Account and Profile created")
 
                 return user
 
         except Exception as e:
-            # If Django models fail, try to delete Supabase user
-            try:
-                supabase.auth.admin.delete_user(supabase_user.id)
-            except:
-                pass  # If cleanup fails, at least we tried
+            print(f"Error occurred: {str(e)}")
+            if supabase_user:
+                try:
+                    print("Attempting to delete Supabase user...")
+                    supabase.auth.admin.delete_user(supabase_user.user.id)  # Access the ID correctly
+                    print("Supabase user deleted")
+                except Exception as cleanup_error:
+                    print(f"Failed to delete Supabase user: {str(cleanup_error)}")
             raise serializers.ValidationError(f"Failed to create user: {str(e)}")
 
     

@@ -243,19 +243,6 @@ class SignInView(APIView):
                 'last_name': user.last_name,
             }
 
-            # cache session
-            session_key = f'supabase_session_{auth_response.session.access_token}'
-            session_data = {
-                'email': email,
-                'session_id': auth_response.session.id,
-                'expires_at': auth_response.session.expires_at,
-            }
-            cache.set(
-                session_key,
-                session_data,
-                timeout=3600
-            )
-
             return Response(
                 {   
                     'user': user_data,
@@ -286,7 +273,6 @@ class SignOutView(APIView):
             auth_header = request.META.get('HTTP_AUTHORIZATION')
             if auth_header and auth_header.startswith('Bearer '):
                 token = auth_header.split(' ')
-                cache.delete(f'supabase_session{token}')
                 supabase.auth.sign_out(token)
 
             return Response({"message": "User logged out successfully"}, status=status.HTTP_200_OK)

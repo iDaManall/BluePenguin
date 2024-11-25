@@ -77,7 +77,8 @@ class Profile(models.Model):
     
     def save(self, *args, **kwargs):
         if self.display_icon is None:
-            self.display_icon = random.choice(avatar[0] for avatar in AVATAR_CHOICES)
+            avatar_choices = [avatar[0] for avatar in AVATAR_CHOICES]
+            self.display_icon = random.choice(avatar_choices)
         super().save(*args, **kwargs)
 
 
