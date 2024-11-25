@@ -9,6 +9,7 @@ from django.urls import reverse
 from .utils import *
 from django.conf import settings
 from supabase import create_client
+from django.db import transaction
 
 from django.utils import timezone
 
@@ -103,50 +104,45 @@ class RegisterSerializer(serializers.ModelSerializer):
     # create new account 
     def create(self, validated_data):
         try:
-            username = validated_data["username"]
-            email = validated_data["email"]
-            first_name = validated_data["first_name"]
-            last_name = validated_data["last_name"]
-            password = validated_data["password"]
-            display_name = validated_data["display_name"]
-            description = validated_data["description"]
-
-            user = User.objects.create_user(username=username, 
-                                        email=email, 
-                                        first_name=first_name, 
-                                        last_name=last_name)
-            user.set_password(password)
-            user.save()
-            '''
-            user.email_user(subject='Welcome to Blue Penguin!', 
-                        message='Thank you for registering with us. We hope you enjoy your stay!\n\nfrom Blue Penguin Team', 
-                        from_email=settings.EMAIL_HOST_USER)
-            '''
-            # create account
-            account = Account.objects.create(user=user) # Note: **validated_data refers to everything you just validated
-
-            profile = Profile.objects.create(account=account, 
-                                            display_name=display_name or user.get_full_name(), 
-                                            description=description)
-
+            # First create Supabase user
             supabase = create_client(
                 settings.SUPABASE_URL,
                 settings.SUPABASE_SERVICE_ROLE_KEY,
             )
 
-            supabase.auth.admin.create_user(
-                {
-                    'email': validated_data['email'],
-                    'password': validated_data['password'],
-                    'email_confirm': False 
-                }
-            )
+            supabase_user = supabase.auth.admin.create_user({
+                'email': validated_data['email'],
+                'password': validated_data['password'],
+                'email_confirm': False 
+            })
 
-            return user
+            # If Supabase succeeds, create Django models in a transaction
+            with transaction.atomic():
+                user = User.objects.create_user(
+                    username=validated_data["username"],
+                    email=validated_data["email"],
+                    first_name=validated_data["first_name"],
+                    last_name=validated_data["last_name"]
+                )
+                user.set_password(validated_data["password"])
+                user.save()
+
+                account = Account.objects.create(user=user)
+                profile = Profile.objects.create(
+                    account=account,
+                    display_name=validated_data.get("display_name") or user.get_full_name(),
+                    description=validated_data.get("description")
+                )
+
+                return user
+
         except Exception as e:
-            raise serializers.ValidationError(
-                f"Failed to create user: {str(e)}"
-            )
+            # If Django models fail, try to delete Supabase user
+            try:
+                supabase.auth.admin.delete_user(supabase_user.id)
+            except:
+                pass  # If cleanup fails, at least we tried
+            raise serializers.ValidationError(f"Failed to create user: {str(e)}")
 
     
 
