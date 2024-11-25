@@ -98,7 +98,7 @@ class EmailNotifications:
         pay_fine_to = ""
         if is_vip:
             consequence = "Demoted to User Status"
-            pay_fine_to = "Log in to pay a $50 fine to get access to your account again."
+            pay_fine_to = "Your items are no longer available for auction. Log in to pay a $50 fine to get access to your account again."
         subject = f"Account {consequence}."
         message = f"Your account {user.username} has been {consequence.lower()} because of the following reason:\n{reason}.\n\n{pay_fine_to}"
         user.email_user(
@@ -147,6 +147,75 @@ class EmailNotifications:
             from_email=settings.EMAIL_HOST_USER
         )
 
+    @staticmethod
+    def notify_items_deleted(user, items):
+        subject = "Transaction Cancelled Due to Item Deletion"
+        message = f"The following items have been deleted by either BluePenguin or its BluePenguin user: {', '.join(items)}."
+        user.email_user(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER
+        )
+
+    @staticmethod
+    def notify_quit_application_received(user):
+        subject = "Quit Application Received."
+        message = "Your quit application has been received. It is currently under review."
+        user.email_user(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER
+        )
+    
+    @staticmethod
+    def notify_deletion_rejected(user):
+        subject = "Account Deletion Request Rejected"
+        message = f"After being reviewed by BluePenguin Superusers, they believed that your account deletion request is invalid."
+        user.email_user(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER
+        )
+
+    @staticmethod
+    def notify_report_received(user):
+        subject = "Your Report Was Received."
+        message = "It is under review by BluePenguin's superusers."
+        user.email_user(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER
+        )
+
+    @staticmethod
+    def notify_report_rejected(user):
+        subject = "Report Rejected"
+        message = f"After being reviewed by BluePenguin Superusers, they believed that your report is invalid."
+        user.email_user(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER
+        )
+
+    @staticmethod
+    def notify_reported(user, reason):
+        subject = "Account Report"
+        message = f"A BluePenguin user reported your account because of the following reason:{reason}. You are no longer eligible to be a VIP."
+        user.email_user(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER
+        )
+
+    @staticmethod
+    def notify_deletion_approved(user):
+        subject = "We're sad to see you go."
+        message = "BluePenguin superusers have agreed that your request to quit is valid. Your account and items have been automatically deleted."
+        user.email_user(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER
+        )
 
 def upload_to_gcs(file, destination_blob_name):
     client = storage.Client.from_service_account_json(settings.GOOGLE_APPLICATION_CREDENTIALS)

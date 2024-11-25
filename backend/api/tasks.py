@@ -49,6 +49,8 @@ def check_auction_deadlines():
             buyer_account = winning_bid.profile.account
             buyer_account.balance -= item.winning_bid.bid_price
             buyer_account.save()
+            
+            buyer_account.get_VIP_discount(item.winning_bid.bid_price)
 
             Transaction.objects.create(
                 seller=seller_account,

@@ -115,6 +115,13 @@ class Account(models.Model):
                 self.revoke_VIP()
                 EmailNotifications.notify_VIP_status_revoked(self.user)
 
+    def get_VIP_discount(self, actual_price):
+        if self.status == STATUS_VIP:
+            # get a 10% discount ; means that you get 10% of the price added back to balance
+            new_price = actual_price * 0.10
+            self.balance += new_price
+            self.save()
+
     '''
     def set_password(self, user_password):
         self.password = make_password(user_password)
@@ -225,8 +232,19 @@ class Rating(models.Model):
                     is_vip = True
                 else:
                     ratee.account.is_suspended = True
+
                 ratee.account.suspension_strikes += 1
+
+                ratee_items = Item.objects.filter(profile=ratee)
+                ratee_items.delete()
                 ratee.account.save()
+
+                buyers = Transaction.objects.filter(seller=ratee).select_related('buyer__user').values_list('buyer__user', flat=True).distinct()
+                for buyer in buyers:
+                    items = Transaction.objects.filter(seller=ratee, buyer__user=buyer).select_related('bid__item').values_list('bid__item__title', flat=True)
+                    item_titles = list(items)
+                    EmailNotifications.notify_items_deleted(buyer, item_titles)
+
                 reason = "Average rating has reached less than 2 -- Too mean." if avg_rating < 2 else "Average rating has reached greater than 4 -- Too generous."
                 EmailNotifications.notify_account_suspended(ratee_user, reason, is_vip)
 
@@ -259,12 +277,16 @@ class Report(models.Model):
     reporter = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='reports_given')
     reportee = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='reports_received')
     report = models.TextField(max_length=1000)
+    status = models.CharField(max_length=1, choices=REQUEST_STATUS_CHOICES, default=REQUEST_PENDING_CHOICE)
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
         reportee = self.reportee
         reportee.account.check_vip_eligibility()
+
+        reporter_user = self.reporter.account.user
+        EmailNotifications.notify_report_received(reporter_user)
 
 class Parcel(models.Model):
     transaction = models.OneToOneField(Transaction, on_delete=models.CASCADE)
@@ -275,6 +297,10 @@ class Parcel(models.Model):
     distance_unit = models.CharField(max_length=2, choices=DISTANCE_UNIT_CHOICES, default=INCH_CHOICE)
     weight_unit = models.CharField(max_length=2, choices=WEIGHT_UNIT_CHOICES, default=POUND_CHOICE)
 
+class QuitRequest(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    reason = models.TextField(max_length=1000)
+    status = models.CharField(max_length=1, choices=REQUEST_STATUS_CHOICES, default=REQUEST_PENDING_CHOICE)
 
 
 
