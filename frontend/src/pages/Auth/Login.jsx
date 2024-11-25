@@ -41,20 +41,20 @@ const Login = () => {
 
   return (
     <div>
-      <nav class = "nav-bar">
-          <div class = "logo">
+      <nav className = "nav-bar">
+          <div className = "logo">
             <a href="#">BLUEPENGUIN</a>
           </div>
           <ul>
-            <li> <a href = "#" ><i class='bx hover-action bx-menu' ></i> Catergories</a></li>
+            <li> <a href = "#" ><i className='bx hover-action bx-menu' ></i> Catergories</a></li>
           </ul>
-          <div class = 'search-bar'>
+          <div className = 'search-bar'>
             <input type ='text' placeholder= "Search..." id = "search-input"></input>
-            <button type = 'submit' class ="search-btn"><i class='bx bxs-search-alt-2' ></i></button>
+            <button type = 'submit' className ="search-btn"><i className='bx bxs-search-alt-2' ></i></button>
           </div>
-          <ul><li> <a href = "#" class = "Account-Login">My Account</a></li></ul>
+          <ul><li> <a href = "#" className = "Account-Login">My Account</a></li></ul>
           
-          <ul><li> <a href = '#' class = 'cart'><i class='bx  hover-action bxs-cart bx-md'></i></a></li></ul>
+          <ul><li> <a href = '#' className = 'cart'><i className='bx  hover-action bxs-cart bx-md'></i></a></li></ul>
          
       </nav>
 

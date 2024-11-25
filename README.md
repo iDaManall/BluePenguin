@@ -16,6 +16,7 @@ This project is an online e-bidding platform where users can create and manage a
    git clone https://github.com/iDaManall/BluePenguin.git
    ```
 2. Install dependencies:
+
    Frontend:
    ```bash
    cd frontend
@@ -32,6 +33,7 @@ This project is an online e-bidding platform where users can create and manage a
 4. Set up environment variables such as api keys and database urls. Run migrations if needed. 
 
 5. Start the application:
+   
    Frontend:
    ```bash
    cd frontend
@@ -44,8 +46,8 @@ This project is an online e-bidding platform where users can create and manage a
    ```
 
 ## Usage
-- After starting the server, navigate to... `http://localhost:8000/` to access the platform.
-- <!-- Create a new auction by clicking "Create Auction" and filling out the form. -->
+- After starting the server, navigate to... `http://localhost:5173/` to access the platform.
+  <!-- Create a new auction by clicking "Create Auction" and filling out the form. -->
 
 <!---
 ## Features

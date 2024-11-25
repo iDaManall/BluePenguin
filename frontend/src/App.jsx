@@ -27,6 +27,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         {/*all of the different routes we want to navigate between*/}
+        <Navbar /> {/* Navbar is placed here to appear on every page */}
         <Routes>
           <Route path = "/" element = {<Home />} />
           <Route path = "/login" element = {<Login />} />
