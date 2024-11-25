@@ -42,16 +42,17 @@ const apiFetch = async (endpoint, method = "GET", body = null, token = null) => 
       mode: 'cors'  // Add this line
     });
 
-    const contentType = response.headers.get("content-type");
     if (!response.ok) {
+      const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'API request failed');
+        throw new Error(errorData.error || `API Error: ${response.status}`);
       } else {
-        throw new Error('API request failed');
+        throw new Error(`API Error: ${response.status}`);
       }
     }
 
+    const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
       return await response.json();
     }

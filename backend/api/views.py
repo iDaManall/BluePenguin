@@ -69,6 +69,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     # user registration
     @action(detail=False, methods=['post'], url_path='register', permission_classes=[AllowAny])
     def register(self, request):
+        print("Registration data received:", request.data)  # Debug log
         serializer = RegisterSerializer(data=request.data)
 
         if serializer.is_valid():

@@ -74,22 +74,33 @@ export const AuthProvider = ({ children }) => {
   //   }
   // };
 
-  const signUp = async (email, password, username, ...otherData) => {
-    // First register with django
-    const djangoResponse = await authService.register({
-      email,
-      password,
-      username,
-      ...otherData
-    });
-
-    // Then we create Supabase account
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    if (error) throw error;
-    return {...data, djangoUser: djangoResponse };
+  const signUp = async (email, password, username, firstName, lastName) => {
+    try {
+      // First register with django
+      const djangoResponse = await authService.register({
+        email,
+        password,
+        username,
+        first_name: firstName,
+        last_name: lastName
+      });
+  
+      if (!djangoResponse) {
+        throw new Error('Failed to register with backend');
+      }
+  
+      // Then create Supabase account
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+  
+      if (error) throw error;
+      return {...data, djangoUser: djangoResponse};
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
   };
 
   const signOut = async () => {

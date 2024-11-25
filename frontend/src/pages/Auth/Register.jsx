@@ -34,10 +34,12 @@ const Register = () => {
           username: formData.username,
           email: formData.email,
           password: formData.password,
-          first_name: formData.firstName || formData.username, // Add these fields
-          last_name: formData.lastName || formData.username    // Add these fields
+          first_name: formData.username, // Default to username if not provided
+          last_name: formData.username   // Default to username if not provided
       };
       
+      console.log('Sending registration data:', registrationData); // Debug log
+
       await signUp(
           registrationData.email,
           registrationData.password,
@@ -48,6 +50,7 @@ const Register = () => {
 
       navigate('/login');
     } catch (err) {
+      console.error('Registration error:', err);
       setError(err.message || 'Failed to register');
     }
   };
