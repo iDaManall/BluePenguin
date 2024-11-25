@@ -81,18 +81,26 @@ class AccountViewSet(viewsets.ModelViewSet):
                     settings.SUPABASE_ANON_KEY
                 )
 
-                auth_response = supabase.auth.sign_in_with_password({
+                print(f"Creating Supabase user for {request.data['email']}")
+
+                auth_response = supabase.auth.sign_up({
                                 'email': request.data['email'],
                                 'password': request.data['password'],
                 })
 
+                print("Supabase user created successfully")
+
                 return Response({
                     'user': serializer.data,
-                    'access_token': auth_response.session.access_token,
-                    'refresh_token': auth_response.session.refresh_token
+                    'access_token': auth_response.session.access_token if auth_response.session else None,
+                    'refresh_token': auth_response.session.refresh_token if auth_response.session else None
                     }, status=status.HTTP_201_CREATED)
             except IntegrityError: # if you put attribs as unique=True in the model class
                 return Response({"error": "Username or email already in use"}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                print(f"Registration error: {str(e)}")
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # UPDATE all basic info like first name, last name, email, username, and password
@@ -303,10 +311,22 @@ class SignInView(APIView):
             email = request.data.get('email')
             password = request.data.get('password')
 
+            print(f"Attempting login for email: {email}")
+
             if not email or not password:
                 return Response(
                     {'error': 'Email and password are required'},
                     status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            try:
+                # Verify the user exists in Django first
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                print(f"User with email {email} not found in Django")
+                return Response(
+                    {'error': 'Invalid login credentials'},
+                    status=status.HTTP_401_UNAUTHORIZED
                 )
             
             # Add error handling for Supabase client creation
@@ -315,6 +335,7 @@ class SignInView(APIView):
                     settings.SUPABASE_URL,
                     settings.SUPABASE_ANON_KEY,
                 )
+                print("Supabase client created successfully")
             except Exception as e:
                 print(f"Supabase client creation error: {str(e)}")
                 return Response(
@@ -324,15 +345,19 @@ class SignInView(APIView):
 
             print("Attempting Supabase authentication...")
             # sign in, get session
-            auth_response = supabase.auth.sign_in_with_password(
-                {
+            try:
+                auth_response = supabase.auth.sign_in_with_password({
                     'email': email,
                     'password': password,
-                }
-            )
-            print("Supabase authentication successful")
+                })
+                print("Supabase authentication successful")
+            except Exception as e:
+                print(f"Supabase authentication error: {str(e)}")
+                return Response(
+                    {'error': 'Invalid login credentials'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
 
-            user = User.objects.get(email=email)
             user_data = {
                 'email': user.email,
                 'username': user.username,
@@ -350,13 +375,13 @@ class SignInView(APIView):
             )
 
             # Set CORS headers explicitly
-            response["Access-Control-Allow-Credentials"] = "true"
+            # response["Access-Control-Allow-Credentials"] = "true"
             return response
         
         except Exception as e:
             print(f"Sign-in error: {str(e)}")  # Add detailed logging
             return Response(
-                {'error': f'Invalid credentials: {str(e)}'},
+                {'error': 'Invalid login credentials'},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 

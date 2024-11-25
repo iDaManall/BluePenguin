@@ -30,13 +30,21 @@ const Register = () => {
     }
 
     try {
-      const { confirmPassword, ...registrationData } = formData;
-      const { data } = await signUp(registrationData.email, registrationData.password);
-
-      if (data?.user) {
-        localStorage.setItem('access_token', data.session.access_token);
-        localStorage.setItem('refresh_token', data.session.refresh_token);
-      }
+      const registrationData = {
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+          first_name: formData.firstName || formData.username, // Add these fields
+          last_name: formData.lastName || formData.username    // Add these fields
+      };
+      
+      await signUp(
+          registrationData.email,
+          registrationData.password,
+          registrationData.username,
+          registrationData.first_name,
+          registrationData.last_name
+      );
 
       navigate('/login');
     } catch (err) {

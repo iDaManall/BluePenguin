@@ -38,14 +38,21 @@ export const AuthProvider = ({ children }) => {
         password,
       });
   
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase auth error:', error);
+        throw error;
+      }
       
+      // Store tokens
+      localStorage.setItem('access_token', djangoResponse.access_token);
+      localStorage.setItem('refresh_token', djangoResponse.refresh_token);
+
       return {...data, djangoUser: djangoResponse};
     } catch (error) {
       console.error('Authentication error:', error);
-      throw error;
+      throw new Error(error.message || 'Invalid login credentials');
     }
-  }
+  };
 
   // const signIn = async (email, password) => {
   //   try {
