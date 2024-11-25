@@ -93,7 +93,7 @@ class Item(models.Model):
     image_urls = models.JSONField(default=list)
     profile = models.ForeignKey(Profile, on_delete=models.PROTECT)
     description = models.TextField(max_length=255)
-    asking_price = models.DecimalField(max_digits=6, decimal_places=2)
+    selling_price = models.DecimalField(max_digits=6, decimal_places=2)
     highest_bid = models.DecimalField(max_digits=6, decimal_places=2, default=0.00)
     deadline = models.DateTimeField()
     date_posted = models.DateField(auto_now_add=True)
@@ -104,14 +104,14 @@ class Item(models.Model):
 
     def save(self, *args, **kwargs):
         if self.highest_bid is None:
-            self.highest_bid = self.asking_price
+            self.highest_bid = self.selling_price
         super().save(*args, **kwargs)
 
     def is_expired(self):
         return self.deadline < now()
     
     def is_available(self):
-        return not self.is_exppired() and self.availability == AVAILABLE_CHOICE
+        return not self.is_expired() and self.availability == AVAILABLE_CHOICE
     
     def select_winning_bid(self):
         if self.is_expired() and self.total_bids > 0:
@@ -137,8 +137,8 @@ class Bid(models.Model):
 
 
 class Transaction(models.Model):
-    seller = models.OneToOneField(Account, on_delete=models.CASCADE, related_name='to_ship')
-    buyer = models.OneToOneField(Account, on_delete=models.CASCADE, related_name='won')
+    seller = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='to_ship')
+    buyer = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='won')
     bid = models.OneToOneField(Bid, on_delete=models.PROTECT)
     status = models.CharField(max_length=1, choices=TRANSACTION_STATUS_CHOICES, default=PENDING_CHOICE)
     estimated_delivery = models.DateField(null=True, blank=True, default=None)
@@ -147,8 +147,8 @@ class Transaction(models.Model):
 
 
 class Rating(models.Model):
-    rater = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='ratings_received')
-    ratee = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='ratings_given')
+    rater = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='ratings_given')
+    ratee = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='ratings_received')
     rating = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], default=0)
 
 

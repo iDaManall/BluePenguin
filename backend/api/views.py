@@ -301,7 +301,7 @@ class SignOutView(APIView):
 class ProfileViewSet(viewsets.ModelViewSet):
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     # view profile
     # note: the action decorator is used to create custom actions on the viewset
@@ -347,8 +347,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             serializer.save()
             avg_rating = Rating.objects.filter(ratee=ratee).aggregate(Avg('rating'))
-            profile.average_rating = avg_rating
-            profile.save()
+            ratee.average_rating = avg_rating['rating__avg']
+            ratee.save()
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -423,6 +423,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 class ItemViewSet(viewsets.ModelViewSet):
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
+    permission_classes = [AllowAny]
     search_fields = ['title', 'description', 'collection']
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = ItemFilter
@@ -449,7 +450,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             item = serializer.save()
             profile = item.profile
-            item_count = Item.objects.filter(profile=profile).aggregate(Count('id'))
+            item_count = Item.objects.filter(profile=profile).count()
             profile.item_count = item_count
             profile.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -480,7 +481,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # /api/items/{pk}/view_comments
-    @action(detail=True, methods=['post'], permission_classes=[AllowAny], url_path='comments')
+    @action(detail=True, methods=['get'], permission_classes=[AllowAny], url_path='comments')
     def view_comments(self, request):
         item = self.get_object()
         comments = Comment.objects.filter(item=item)
@@ -546,7 +547,7 @@ class ItemViewSet(viewsets.ModelViewSet):
                 return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
         
             elif request.method == 'DELETE':
-                like = Like.objects.filter(comment=comment, user=request.user).first()
+                like = Like.objects.filter(comment=comment, profile=request.user.account.profile).first()
                 like.delete()
 
                 likes_count = Like.objects.filter(comment=comment).aggregate(Count('id'))
@@ -555,7 +556,7 @@ class ItemViewSet(viewsets.ModelViewSet):
 
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='dislike-comment')
+    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated], url_path='dislike-comment')
     def dislike_comment(self, request):
         comment_id = request.data.get('id', None)
 
@@ -575,10 +576,10 @@ class ItemViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
         
         elif request.method == 'DELETE':
-            dislike = Like.objects.filter(comment=comment, user=request.user).first()
+            dislike = Dislike.objects.filter(comment=comment, profile=request.user.account.profile).first()
             dislike.delete()
 
-            dislikes_count = Like.objects.filter(comment=comment).aggregate(Count('id'))
+            dislikes_count = Dislike.objects.filter(comment=comment).aggregate(Count('id'))
             comment.dislikes = dislikes_count
             comment.save()
 
@@ -606,8 +607,10 @@ class ItemViewSet(viewsets.ModelViewSet):
         bid_amount = Decimal(request.data.get('bid_price'))
         if bid_amount <= item.highest_bid:
             return Response({"error": "Bid must be higher than current bid."})
-        elif bid_amount <= account.balance:
+        if bid_amount > account.balance:
             return Response({"error": "Insufficient funds."}, status=status.HTTP_402_PAYMENT_REQUIRED)
+        if bid_amount <= 0:
+            return Response({"error": "Invalid bid amount."})
         
         highest_bid = item.highest_bid
         highest_bid_obj = Bid.objects.filter(item=item, bid_price=highest_bid).first()

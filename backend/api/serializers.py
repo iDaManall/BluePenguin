@@ -179,7 +179,7 @@ class AccountSerializer(serializers.ModelSerializer):
         # update account settings
         for attr in ['first_name', 'last_name', 'username', 'email']:
             if attr in validated_data:
-                setattr(instance, attr, validated_data[attr])
+                setattr(instance.user, attr, validated_data['user'][attr])
         
         # save everything
         user.save()
@@ -193,9 +193,9 @@ class SignInSerializer(serializers.Serializer):
     password = serializers.CharField() 
 
 # next do a profile serializer for the account
-class ProfileSerializer(serializers.Serializer):
-    username = serializers.CharField(source="user.username")
-    slug = serializers.SlugField(source="user.username", read_only=True)
+class ProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="account.user.username")
+    slug = serializers.SlugField(source="account.user.username", read_only=True)
     display_icon = serializers.ImageField(required=False)
     average_rating = serializers.SerializerMethodField()
 
@@ -221,7 +221,7 @@ class ProfileSerializer(serializers.Serializer):
         # uploading display icon
         if 'display_icon' in validated_data:
             display_icon = validated_data['display_icon']
-            destination_blob_name = f"profile-pics/{instance.user.username}/{display_icon.name}"
+            destination_blob_name = f"profile-pics/{instance.account.user.username}/{display_icon.name}"
             url = upload_to_gcs(display_icon, destination_blob_name)
             instance.display_icon = url
         
@@ -251,13 +251,13 @@ class RatingSerializer(serializers.ModelSerializer):
     
 
 class ItemSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source="user.username")
+    username = serializers.CharField(source="profile.account.user.username")
     display_icon = serializers.ImageField(source="profile.display_icon")
     images = serializers.ListField(write_only=True, required=False)
 
     class Meta:
         model = Item
-        fields = ['title', 'username', 'display_icon' 'description', 'deadline', 'collection', 'image', 'selling_price', 'profile']
+        fields = ['title', 'username', 'display_icon', 'description', 'deadline', 'collection', 'images', 'selling_price', 'profile']
         extra_kwargs = {
             "username": {"read_only": True},
             "display_icon": {"read_only": True}
@@ -273,14 +273,14 @@ class ItemSerializer(serializers.ModelSerializer):
 
         description = validated_data.pop("description")
         deadline = validated_data.pop("deadline")
-        collection = validated_data.pop("deadline")
+        collection = validated_data.pop("collection")
         selling_price = validated_data.pop("selling_price")
 
         item = Item.objects.create(title=title, profile=profile, description=description, deadline=deadline, collection=collection, selling_price=selling_price)
 
         gcs_urls = []
         for file in files:
-            destination_blob_name = f"items/{self.username}/{file.name}"
+            destination_blob_name = f"items/{user.username}/{file.name}"
             url = upload_to_gcs(file, destination_blob_name)
             gcs_urls.append(url)
         
@@ -291,8 +291,8 @@ class ItemSerializer(serializers.ModelSerializer):
     
 
 class CommentSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source="user.username")
-    display_icon = serializers.ImageField(source="account.display_icon")
+    username = serializers.CharField(source="profile.account.user.username")
+    display_icon = serializers.ImageField(source="profile.display_icon")
     likes = serializers.SerializerMethodField()
     dislikes = serializers.SerializerMethodField()
 
@@ -344,13 +344,13 @@ class CommentSerializer(serializers.ModelSerializer):
     
 
 class SaveSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(source='item.image')
+    image_urls = serializers.JSONField(source='item.image_urls')
     title = serializers.CharField(source='item.title')
     current_bid = serializers.DecimalField(source='item.highest_bid', max_digits=6, decimal_places=2)
 
     class Meta:
         model = Save
-        fields = ['item', 'profile', 'time_saved', 'image', 'title', 'current_bid']
+        fields = ['item', 'profile', 'time_saved', 'image_urls', 'title', 'current_bid']
         extra_kwargs = {
             "item": {"read_only": True},
             "profile": {"read_only": True},
@@ -395,7 +395,7 @@ class LikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Like
         fields = ['profile', 'comment']
-        extra_kwards = {
+        extra_kwargs = {
             'profile': {'read_only': True},
             'comment': {'read_only': True},
         }
@@ -416,7 +416,7 @@ class DislikeSerializer(serializers.ModelSerializer):
     class Meta: 
         model = Dislike
         fields = ['profile', 'comment']
-        extra_kwards = {
+        extra_kwargs = {
             'profile': {'read_only': True},
             'comment': {'read_only': True},
         }
@@ -425,7 +425,7 @@ class DislikeSerializer(serializers.ModelSerializer):
 class BidSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bid
-        fields = ['id', 'bid_price', 'item', 'time_of_bid', 'status']
+        fields = ['id', 'bid_price', 'item', 'time_of_bid', 'status', 'profile']
         extra_kwargs = {
             'item': {'read_only': True},
             'profile': {'read_only': True},
@@ -457,6 +457,7 @@ class TransactionSerializer(serializers.ModelSerializer):
     buyer_username = serializers.CharField(source='buyer.user.username', read_only=True)
     item_title = serializers.CharField(source='bid.item.title', read_only=True)
     bid_amount = serializers.DecimalField(source='bid.bid_price', max_digits=6, decimal_places=2, read_only=True)
+    image_urls = serializers.JSONField(source='bid.item.image_urls')
     
     class Meta:
         model = Transaction
@@ -481,4 +482,4 @@ class ParcelSerializer(serializers.ModelSerializer):
         transaction = self.context['transaction']
         validated_data['transaction'] = transaction
         parcel = Parcel.objects.create(**validated_data)
-        return parcel
+        return parcel 
