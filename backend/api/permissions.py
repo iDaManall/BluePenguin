@@ -95,3 +95,14 @@ class IsBuyer(BasePermission):
         # obj is transaction
         return obj.bid.buyer.user == request.user
     
+class IsNotSuspended(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        account = user.account
+        return account.is_suspended == False
+
+class IsSuspended(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        account = user.account
+        return account.is_suspended == True

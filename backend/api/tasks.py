@@ -1,11 +1,11 @@
 from celery import shared_task
 from django.utils import timezone
 from datetime import timedelta
-from .models import Item, Bid, Transaction
+from .models import Item, Report, Transaction
 from .choices import *
 from .utils import EmailNotifications
 from django.contrib.auth.models import User
-from django.db.models.aggregates import Max
+from django.db.models import Q
 
 @shared_task
 def check_auction_deadlines():
@@ -47,7 +47,7 @@ def check_auction_deadlines():
             seller_account.save()
 
             buyer_account = winning_bid.profile.account
-            buyer_account.balance -= item.winning_bid.bid_pric
+            buyer_account.balance -= item.winning_bid.bid_price
             buyer_account.save()
 
             Transaction.objects.create(
@@ -55,6 +55,9 @@ def check_auction_deadlines():
                 buyer=buyer_account,
                 bid=winning_bid,
             )
+
+            seller_account.check_vip_eligibility()
+            buyer_account.check_vip_eligibility()
 
             EmailNotifications.notify_bid_won(
                 winning_bid.profile.account.user,

@@ -1,4 +1,5 @@
 from .choices import *
+from .utils import EmailNotifications
 import random
 from django.db import models
 from django.contrib.auth.models import User
@@ -6,6 +7,10 @@ from django.utils.timezone import now
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.auth.hashers import make_password, check_password
+from django.db.models.aggregates import Avg
+from django.db.models import Q
+from supabase import Client, create_client
+from django.conf import settings
 
 # Create your models here.
 class Note(models.Model):
@@ -57,6 +62,58 @@ class Account(models.Model):
     shipping_address = models.ForeignKey(ShippingAddress, on_delete=models.CASCADE, null=True, blank=True, default=None)
     balance = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, default=0.00)
     is_suspended = models.BooleanField(default=False)
+    suspension_fine_paid = models.BooleanField(default=False)
+    suspension_strikes = models.PositiveIntegerField(default=0)
+
+    def delete_account_user_profile(self):
+        try:
+            user = self.user 
+
+            supabase = create_client(
+                settings.SUPABASE_URL,
+                settings.SUPABASE_SERVICE_ROLE_KEY,
+            )
+
+            for user_data in supabase.auth.admin.list_users():
+                if user_data.email == self.user.email:
+                    supabase.auth.admin.delete_user(user_data.id)
+                    break
+
+            self.profile.delete()
+
+            self.delete()
+
+            user.delete()
+
+            return True
+        except:
+            return False
+        
+    def become_VIP(self):
+        if self.status == STATUS_USER:
+            self.status = STATUS_VIP
+            self.save()
+    
+    def revoke_VIP(self):
+        if self.status == STATUS_VIP:
+            self.status = STATUS_USER
+            self.save()
+
+    def check_vip_eligibility(self):
+        transaction_count = Transaction.objects.filter(
+                Q(seller=self) | Q(buyer=self)
+        ).count()
+
+        has_reports = Report.objects.filter(reportee=self.profile).exists()
+        balance_sufficient = self.balance > 5000
+
+        if self.status == STATUS_USER and transaction_count > 5 and not has_reports and balance_sufficient:
+            self.become_VIP()
+            EmailNotifications.notify_VIP_status_earned(self.user)
+        elif self.status == STATUS_VIP:
+            if has_reports or not balance_sufficient:
+                self.revoke_VIP()
+                EmailNotifications.notify_VIP_status_revoked(self.user)
 
     '''
     def set_password(self, user_password):
@@ -152,6 +209,30 @@ class Rating(models.Model):
     ratee = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='ratings_received')
     rating = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], default=0)
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        ratee = self.ratee
+        ratee_user = ratee.account.user
+        ratings = Rating.objects.filter(ratee=ratee)
+
+        if ratings.count() >= 3:
+            avg_rating = ratings.aggregate(Avg('rating'))['rating__avg']
+            is_vip = False
+            if avg_rating < 2 or avg_rating > 4:
+                if ratee.account.status == STATUS_VIP:
+                    ratee.account.status = STATUS_USER
+                    is_vip = True
+                else:
+                    ratee.account.is_suspended = True
+                ratee.account.suspension_strikes += 1
+                ratee.account.save()
+                reason = "Average rating has reached less than 2 -- Too mean." if avg_rating < 2 else "Average rating has reached greater than 4 -- Too generous."
+                EmailNotifications.notify_account_suspended(ratee_user, reason, is_vip)
+
+                if ratee.account.suspension_strikes >= 3:
+                    ratee.account.delete_account_user_profile()
+    
 
 class Comment(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
@@ -178,6 +259,12 @@ class Report(models.Model):
     reporter = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='reports_given')
     reportee = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='reports_received')
     report = models.TextField(max_length=1000)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        reportee = self.reportee
+        reportee.account.check_vip_eligibility()
 
 class Parcel(models.Model):
     transaction = models.OneToOneField(Transaction, on_delete=models.CASCADE)

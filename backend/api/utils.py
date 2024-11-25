@@ -92,6 +92,61 @@ class EmailNotifications:
             from_email=settings.EMAIL_HOST_USER
         )
 
+    @staticmethod
+    def notify_account_suspended(user, reason, is_vip):
+        consequence = "Suspended"
+        pay_fine_to = ""
+        if is_vip:
+            consequence = "Demoted to User Status"
+            pay_fine_to = "Log in to pay a $50 fine to get access to your account again."
+        subject = f"Account {consequence}."
+        message = f"Your account {user.username} has been {consequence.lower()} because of the following reason:\n{reason}.\n\n{pay_fine_to}"
+        user.email_user(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER
+        )
+
+    @staticmethod
+    def notify_account_balance_insufficient(user, current_balance):
+        subject = "Unsuspended: Account Balance is Insufficient"
+        message = f"You have been unsuspended, but your account balance is now at ${current_balance:.2f}. Log in to add to your account balance."
+        user.email_user(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER
+        )
+    
+    @staticmethod
+    def notify_account_permanently_suspended(user):
+        subject = "Your Account Has Been Permanently Suspended"
+        message = "Your account has been permanently suspended. You can no longer reactivate your account or operate as a BluePenguin user."
+        user.email_user(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER
+        )
+    
+    @staticmethod
+    def notify_VIP_status_earned(user):
+        subject = "VIP Status Earned"
+        message = "Your account has earned VIP status! It currently has over $5k balance, has no complaints, and 5+ transactions."
+        user.email_user(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER
+        )
+    
+    @staticmethod
+    def notify_VIP_status_revoked(user):
+        subject = "VIP Status Revoked"
+        message = "Your account's VIP status has been revoked, because either your balance is under $5k or you have received a complaint."
+        user.email_user(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER
+        )
+
 
 def upload_to_gcs(file, destination_blob_name):
     client = storage.Client.from_service_account_json(settings.GOOGLE_APPLICATION_CREDENTIALS)

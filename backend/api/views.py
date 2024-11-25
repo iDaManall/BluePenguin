@@ -96,7 +96,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # UPDATE all basic info like first name, last name, email, username, and password
-    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsOwner], url_path='update-account-settings')
+    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsOwner, IsNotSuspended], url_path='update-account-settings')
     def update_settings(self, request, pk=None):
         account = self.get_object() # since you are updating an account, get the account object
 
@@ -108,7 +108,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # set shipping address
-    @action(detail=True, methods=['post', 'patch'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor], url_path='set-shipping-address')
+    @action(detail=True, methods=['post', 'patch'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor, IsNotSuspended], url_path='set-shipping-address')
     def set_shipping_address(self, request, pk=None):
         account = self.get_object(pk)
 
@@ -133,7 +133,7 @@ class AccountViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # set card details
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor], url_path='set-card-details')
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor, IsNotSuspended], url_path='set-card-details')
     # if detail=True, this means the URL would include {pk}/set-card-details
     def set_card_details(self, request):
         account = self.get_object()
@@ -167,7 +167,7 @@ class AccountViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # set paypal details
-    @action(detail=True, methods=['post', 'patch'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor], url_path='set-paypal-details')
+    @action(detail=True, methods=['post', 'patch'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor, IsNotSuspended], url_path='set-paypal-details')
     def update_paypal_details(self, request, pk=None):
         account = self.get_object()
 
@@ -194,7 +194,7 @@ class AccountViewSet(viewsets.ModelViewSet):
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsNotVisitor], url_path='view-pending-bids')
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsNotVisitor, IsNotSuspended], url_path='view-pending-bids')
     def view_pending_bids(self, request):
         try:
             account = self.get_object()
@@ -213,6 +213,60 @@ class AccountViewSet(viewsets.ModelViewSet):
                 {"error": f"Failed to fetch transactions: {str(e)}"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+    
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsNotSuspended], url_path='view-current-balance')
+    def view_current_balance(self, request, pk=None):
+        account = self.get_object()
+        try:
+            current_balance = account.balance
+            return Response({"balance": current_balance})
+        except Exception as e:
+            return Response({"error": f"Failed to fetch account balance: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor, IsNotSuspended], url_path='add-to-balance')
+    def add_to_balance(self, request, pk=None):
+        account = self.get_object()
+        balance = account.balance
+        try:
+            amount = Decimal(request.data.get('amount', 0))
+            if amount <= 0:
+                return Response({"error": "Must enter a positive amount of money."}, status=status.HTTP_400_BAD_REQUEST)
+
+            balance += amount
+            account.balance = balance
+            account.save()
+
+            return Response(
+                {
+                    "message": f"Added ${amount:.2f} to balance.",
+                    "balance": account.balance
+                }
+            )
+        except (TypeError, ValueError):
+            return Response(
+                {"error": "Invalid amount entered."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor, IsSuspended], url_path='pay-suspension-fine')
+    def pay_suspension_fine(self, request, pk=None):
+        account = self.get_object()
+        account.balance -= 50.00
+        account.is_suspended = False
+        account.suspension_fine_paid = True
+        account.save() 
+
+        if account.balance < 0:
+            current_balance = account.balance()
+            account_user = account.user
+            EmailNotifications.notify_account_balance_insufficient(account_user, current_balance)
+
+        return Response(
+            {
+                'success': True,
+                'message': 'Fine paid successfully.',
+            }
+        )
 
 class SignInView(APIView):
     permission_classes = [AllowAny]
@@ -287,7 +341,7 @@ class SignOutView(APIView):
 class ProfileViewSet(viewsets.ModelViewSet):
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [AllowAny, IsNotSuspended]
 
     # view profile
     # note: the action decorator is used to create custom actions on the viewset
@@ -409,7 +463,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 class ItemViewSet(viewsets.ModelViewSet):
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [AllowAny, IsNotSuspended]
     search_fields = ['title', 'description', 'collection']
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = ItemFilter
@@ -457,6 +511,9 @@ class ItemViewSet(viewsets.ModelViewSet):
     def comment(self, request):
         # configure the correct item and profile that commented
         item = self.get_object()
+        item_account = item.profile.account
+        if item_account.is_suspended():
+            return Response({"error": "You cannot interact with this user's items since they have been suspended."})
         parent = None
 
         serializer = CommentSerializer(data=request.data, context={'request': request, 'item': item, 'parent': parent})
@@ -480,6 +537,10 @@ class ItemViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='reply')
     def reply(self, request):
         item = self.get_object()
+        item_account = item.profile.account
+        if item_account.is_suspended():
+            return Response({"error": "You cannot interact with this user's items since they have been suspended."})
+        
         parent_id = request.data.get('parent', None) # if you can't get something from self.object, then its probably in the request - gets the pk
         parent = Comment.objects.get(id=parent_id)
 
@@ -515,6 +576,12 @@ class ItemViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated], url_path='like-comment')
     def like_comment(self, request):
+            item = self.get_object()
+            item_account = item.profile.account
+            if item_account.is_suspended():
+                return Response({"error": "You cannot interact with this user's items since they have been suspended."})
+        
+
             comment_id = request.data.get('id', None)
 
             try:
@@ -544,6 +611,11 @@ class ItemViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated], url_path='dislike-comment')
     def dislike_comment(self, request):
+        item = self.get_object()
+        item_account = item.profile.account
+        if item_account.is_suspended():
+            return Response({"error": "You cannot interact with this user's items since they have been suspended."})
+
         comment_id = request.data.get('id', None)
 
         try:
@@ -575,6 +647,10 @@ class ItemViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['POST'], permission_classes=[IsAuthenticated], url_path='save-item')
     def save_item(self, request):
         item = self.get_object()
+        item_account = item.profile.account
+        if item_account.is_suspended():
+            return Response({"error": "You cannot interact with this user's items since they have been suspended."})
+        
         serializer = SaveSerializer(data=request.data, context={'request': request, 'item': item})
 
         if serializer.is_valid():
@@ -658,7 +734,7 @@ class ItemViewSet(viewsets.ModelViewSet):
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsNotSuspended]
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsNotVisitor], url_path='seller-transactions')
     def view_transactions(self, request):
