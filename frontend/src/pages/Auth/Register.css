@@ -81,7 +81,7 @@ border-bottom: 1px solid white;
   
   .form-group input:focus {
     outline: none;
-    box-shadow: 0 5px 0 rgba(105, 140, 216, 2);
+    box-shadow: 0 5px 0 rgba(105, 140, 216, 1);
     border-color: #3b82f6;
   }
   

@@ -54,10 +54,8 @@ const Login = () => {
           </div>
           <ul><li> <a href = "#" className = "Account-Login">My Account</a></li></ul>
           
-          <ul><li> <a href = '#' className = 'cart'><i className='bx  hover-action bxs-cart bx-md'></i></a></li></ul>
-         
+          <ul><li> <a href = '#' classNameName = 'cart'><i className='bx  hover-action bxs-cart bx-md'></i></a></li></ul>
       </nav>
-
 
     <div className="login-container">
       <div className="login-box">

@@ -4,11 +4,11 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    font: rgb(0, 0, 0);
+    color: rgb(0, 0, 0);
   }
   .username{
     font-size: 25px;
-    font: white;
+    color: white;
   }
 
   ::placeholder{
@@ -24,11 +24,11 @@
     border-bottom: 1px solid rgb(255, 255, 255);
     background-color: transparent;
     margin: 0px;
-    font: white;
+    color: white;
   }
 
   .signin-container #username:focus{
-    box-shadow: 0 4px 2px rgba(105, 140, 216, 2)
+    box-shadow: 0 4px 2px rgba(105, 140, 216, 0.2)
   }
   
    .login-container #password{
@@ -39,7 +39,7 @@
     border-bottom: 1px solid rgb(255, 255, 255);
     background-color: transparent;
     margin: 0px;
-    font: red;
+    color: red;
   }
 
   .login-container #password:focus{
