@@ -249,6 +249,24 @@ class EmailNotifications:
             from_email=settings.EMAIL_HOST_USER
         )
 
+    @staticmethod
+    def notify_user_application_received(user):
+        subject = "User Application Received"
+        message = "Your application to become a User has been received and is under review."
+        user.email_user(subject=subject, message=message)
+
+    @staticmethod
+    def notify_user_application_approved(user):
+        subject = "User Application Approved"
+        message = "Your application to become a User has been approved! You now have full user privileges."
+        user.email_user(subject=subject, message=message)
+
+    @staticmethod
+    def notify_user_application_rejected(user):
+        subject = "User Application Rejected"
+        message = "Your application to become a User has been rejected by BluePenguin administration."
+        user.email_user(subject=subject, message=message)
+
 def upload_to_gcs(file, destination_blob_name):
     client = storage.Client.from_service_account_json(settings.GOOGLE_APPLICATION_CREDENTIALS)
     bucket = client.bucket(settings.GOOGLE_CLOUD_STORAGE_BUCKET)
@@ -263,6 +281,7 @@ def generate_random_arithmetic_question():
         (operator.add, "+"),
     ]
 
+# 8 ÷ 2(2+2)
     inner_paren_num1 = random.randint(1,10)
     inner_paren_num2 = random.randint(1,10)
 

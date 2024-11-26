@@ -168,15 +168,16 @@ class Item(models.Model):
     image_urls = models.JSONField(default=list)
     profile = models.ForeignKey(Profile, on_delete=models.PROTECT)
     description = models.TextField(max_length=255)
-    selling_price = models.DecimalField(max_digits=6, decimal_places=2)
-    highest_bid = models.DecimalField(max_digits=6, decimal_places=2, default=0.00)
+    selling_price = models.DecimalField(max_digits=6, decimal_places=2) # asking_price
+    highest_bid = models.DecimalField(max_digits=6, decimal_places=2, default=0.00) # before the deadline
     deadline = models.DateTimeField()
     date_posted = models.DateField(auto_now_add=True)
     total_bids = models.PositiveIntegerField(default=0)
     collection = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True)
     availability = models.CharField(max_length=1, choices=AVAILABILITY_CHOICES, default=AVAILABLE_CHOICE)
     winning_bid = models.OneToOneField('Bid', null=True, on_delete=models.SET_NULL, related_name='winning_item', default=None)
-
+    minimum_bid = models.DecimalField(max_digits=10, decimal_places=2,help_text="Minimum bid amount allowed", default=1.00)
+    maximum_bid = models.DecimalField(max_digits=10, decimal_places=2,help_text="Maximum bid amount allowed", default=1000000.00)
     def save(self, *args, **kwargs):
         if self.highest_bid is None:
             self.highest_bid = self.selling_price
@@ -260,6 +261,7 @@ class Rating(models.Model):
                 EmailNotifications.notify_account_suspended(ratee_user, reason, is_vip)
 
                 if ratee.account.suspension_strikes >= 3:
+                    EmailNotifications.notify_account_permanently_suspended(ratee_user)
                     ratee.account.delete_account_user_profile()
     
 
@@ -313,9 +315,13 @@ class QuitRequest(models.Model):
     reason = models.TextField(max_length=1000)
     status = models.CharField(max_length=1, choices=REQUEST_STATUS_CHOICES, default=REQUEST_PENDING_CHOICE)
 
-
-
-
-
-
+class UserApplication(models.Model):
+    account = models.ForeignKey('Account', on_delete=models.CASCADE)
+    status = models.CharField(
+        max_length=1,
+        choices=REQUEST_STATUS_CHOICES,
+        default=REQUEST_PENDING_CHOICE
+    )
+    captcha_completed = models.BooleanField(default=False)
+    time_of_application = models.DateTimeField(auto_now_add=True)
 

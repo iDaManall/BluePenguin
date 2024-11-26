@@ -511,6 +511,47 @@ class AccountViewSet(viewsets.ModelViewSet):
                 EmailNotifications.notify_quit_application_received(user)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsVisitor], url_path='apply-to-be-user')
+    def apply_to_be_user(self, request, pk=None):
+        # Check if there's already a pending application
+        existing_application = UserApplication.objects.filter(
+            account=request.user.account,
+            status=REQUEST_PENDING_CHOICE
+        ).exists()
+
+        if existing_application:
+            return Response(
+                {"error": "You already have a pending application"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # get captcha
+        if request.method == 'GET':
+            question_data = generate_random_arithmetic_question()
+            request.session['captcha_answer'] = question_data['answer']
+            return Response({
+                "question": question_data['question']
+            })
+        # verify captcha and create application
+        elif request.method == 'POST':
+            user_answer = request.data.get('answer')
+            actual_answer = request.session.get('captcha_answer')
+
+            if int(user_answer) == actual_answer:
+                application = UserApplication.objects.create(
+                    account=request.user.account,
+                    captcha_completed=True
+                )
+                EmailNotifications.notify_user_application_received(request.user)
+                return Response({
+                    "message": "Application submitted successfully",
+                    "application_id": application.id
+                })
+            return Response(
+                {"error": "Incorrect captcha answer"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class SignInView(APIView):
     permission_classes = [AllowAny]
@@ -722,24 +763,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsVisitor], url_path='apply-to-be-user')
-    def apply_to_be_user(self, request, pk=None):
-        # get captcha
-        if request.method == 'GET':
-            question_data = generate_random_arithmetic_question()
-            request.session['captcha_answer'] = question_data['answer']
-            return Response({
-                "question": question_data['question']
-            })
-        # verify captcha
-        elif request.method == 'POST':
-            user_answer = request.data.get('answer')
-            actual_answer = request.session.get('captcha_answer')
-
-            if int(user_answer) == actual_answer:
-                return Response({"valid": True})
-            return Response({"valid": False})
 
 
 # now work on item views
@@ -951,11 +974,25 @@ class ItemViewSet(viewsets.ModelViewSet):
         
         bid_amount = Decimal(request.data.get('bid_price'))
         if bid_amount <= item.highest_bid:
-            return Response({"error": "Bid must be higher than current bid."})
+            return Response(
+                {"error": "Bid must be higher than current bid."},
+                status=status.HTTP_400_BAD_REQUEST)
         if bid_amount > account.balance:
-            return Response({"error": "Insufficient funds."}, status=status.HTTP_402_PAYMENT_REQUIRED)
+            return Response(
+                {"error": "Insufficient funds."}, 
+                status=status.HTTP_402_PAYMENT_REQUIRED)
         if bid_amount <= 0:
-            return Response({"error": "Invalid bid amount."})
+            return Response(
+                {"error": "Invalid bid amount."},
+                status=status.HTTP_400_BAD_REQUEST)
+        if bid_amount < item.minimum_bid:
+            return Response({
+                "error": f"Bid must be at least ${item.minimum_bid}"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        if bid_amount > item.maximum_bid:
+            return Response({
+                "error": f"Bid cannot exceed ${item.maximum_bid}"
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         highest_bid = item.highest_bid
         highest_bid_obj = Bid.objects.filter(item=item, bid_price=highest_bid).first()

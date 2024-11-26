@@ -255,11 +255,11 @@ class RatingSerializer(serializers.ModelSerializer):
 class ItemSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="profile.account.user.username")
     display_icon = serializers.ImageField(source="profile.display_icon")
-    images = serializers.ListField(write_only=True, required=False)
+    image_urls = serializers.ListField(write_only=True, required=False)
 
     class Meta:
         model = Item
-        fields = ['title', 'username', 'display_icon', 'description', 'deadline', 'collection', 'images', 'selling_price', 'profile']
+        fields = ['title', 'username', 'display_icon', 'description', 'deadline', 'collection', 'image_urls', 'selling_price', 'profile', 'maximum_bid', 'minimum_bid']
         extra_kwargs = {
             "username": {"read_only": True},
             "display_icon": {"read_only": True}
