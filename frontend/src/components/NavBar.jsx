@@ -1,88 +1,78 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Login from '../pages/Auth/Login';
 import Register from '../pages/Auth/Register';
 import './Navbar.css';
 
 const Navbar = () => {
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <nav className="navbar">
       <div className="navbar-left">
-        <button 
-          className="hamburger-menu"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-        <Link to="/" className="logo">
-          Blue Penguin
+        <Link to="/" className="brand">
+          BLUE PENGUIN
         </Link>
+        <button className="categories-button">
+          <span className="menu-icon">☰</span>
+          Categories
+        </button>
       </div>
 
       <div className="search-container">
         <input
           type="text"
-          placeholder="Search items..."
-          className="search-bar"
+          placeholder="What would you like to find?"
+          className="search-input"
         />
         <button className="search-button">
-          Search
+          <img src="/search-icon.png" alt="Search" className="search-icon" />
         </button>
       </div>
 
       <div className="navbar-right">
-        <button 
-          className="auth-button"
-          onClick={() => setIsLoginOpen(true)}
-        >
-          Sign In
-        </button>
-        <button 
-          className="auth-button"
-          onClick={() => setIsRegisterOpen(true)}
-        >
-          Sign Up
-        </button>
-        <button className="cart-button">
-          Cart (0)
-        </button>
+        <div className="account-dropdown" ref={dropdownRef}>
+          <button 
+            className="account-button"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          >
+            My Account
+          </button>
+          {isDropdownOpen && (
+            <div className="dropdown-menu">
+              <div className="dropdown-section">
+                <Link to="/profile">Profile</Link>
+                <Link to="/account/settings">Account Setting</Link>
+                <Link to="/payments">Payments / Address</Link>
+                <Link to="/apply">Apply to Be a User</Link>
+                <Link to="/requests">Requests</Link>
+              </div>
+              <div className="dropdown-divider"></div>
+              <div className="dropdown-section">
+                <Link to="/orders/pending">Pending</Link>
+                <Link to="/orders/saved">Saved</Link>
+                <Link to="/orders/canceled">Canceled/processed</Link>
+                <Link to="/orders/shipped">Shipped</Link>
+              </div>
+            </div>
+          )}
+        </div>
+        <Link to="/cart" className="cart-icon">
+          <img src="/cart-icon.png" alt="Cart" />
+        </Link>
       </div>
-
-      {/* Sign In Modal */}
-      {isLoginOpen && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <button 
-              className="modal-close"
-              onClick={() => setIsLoginOpen(false)}
-            >
-              ×
-            </button>
-            <Login onClose={() => setIsLoginOpen(false)} />
-          </div>
-        </div>
-      )}
-
-      {/* Sign Up Modal */}
-      {isRegisterOpen && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <button 
-              className="modal-close"
-              onClick={() => setIsRegisterOpen(false)}
-            >
-              ×
-            </button>
-            <Register onClose={() => setIsRegisterOpen(false)} />
-          </div>
-        </div>
-      )}
     </nav>
   );
 };

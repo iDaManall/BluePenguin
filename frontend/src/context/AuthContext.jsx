@@ -46,6 +46,7 @@ export const AuthProvider = ({ children }) => {
       // Store tokens
       localStorage.setItem('access_token', djangoResponse.access_token);
       localStorage.setItem('refresh_token', djangoResponse.refresh_token);
+      localStorage.setItem('user_id', djangoResponse.user.id); // Add this line
 
       return {...data, djangoUser: djangoResponse};
     } catch (error) {
