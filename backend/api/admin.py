@@ -48,3 +48,41 @@ class QuitRequestAdmin(admin.ModelAdmin):
 
             user = deletion_request.account.user
             EmailNotifications.notify_deletion_rejected(user)
+
+@admin.register(Account)
+class AccountAdmin(admin.ModelAdmin):
+    list_display = ('user', 'is_suspended', 'suspension_strikes')
+    list_filter = ('is_suspended',)
+    actions = ['reactivate_accounts']
+
+    def reactivate_accounts(self, request, queryset):
+        for account in queryset:
+            account.is_suspended = False
+            account.save()
+
+            user = account.user
+            EmailNotifications.notify_account_reactivated(user)
+
+@admin.register(UserApplication)
+class UserApplicationAdmin(admin.ModelAdmin):
+    list_display = ('account', 'status', 'captcha_completed', 'time_of_application')
+    list_filter = ('status', 'captcha_completed')
+    actions = ['approve_applications', 'reject_applications']
+
+    def approve_applications(self, request, queryset):
+        for application in queryset:
+            application.status = REQUEST_APPROVED_CHOICE
+            application.save()
+            
+            account = application.account
+            account.status = STATUS_USER
+            account.save()
+
+            EmailNotifications.notify_user_application_approved(account.user)
+
+    def reject_applications(self, request, queryset):
+        for application in queryset:
+            application.status = REQUEST_REJECTED_CHOICE
+            application.save()
+            EmailNotifications.notify_user_application_rejected(application.account.user)
+

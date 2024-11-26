@@ -3,7 +3,7 @@ from .serializers import *
 from .models import *
 from .permissions import *
 from .filters import *
-from .utils import EmailNotifications
+from .utils import EmailNotifications, complete_transaction
 
 from django.shortcuts import render
 from django.contrib.auth.models import User
@@ -59,6 +59,115 @@ class CreateUserView(generics.CreateAPIView):
     serializer_class = UserSerializer #class tells view what data to accept to make new user
     permission_classes = [AllowAny] #allow anyone to call this to create new user
 '''
+
+# Explore page functions 
+@api_view(['GET'])
+def shop_trending_categories(request):
+    trending_collections = Collection.objects.annotate(
+        item_count=Count('item', filter=Q(item__availability=AVAILABLE_CHOICE)),
+        total_bids=Count('item__bid'),
+        avg_bid=Avg('item__highest_bid'),
+    ).filter(item_count__gt=0).order_by(
+        '-total_bids',
+        '-avg_bid',
+        '-item_count'
+    )[:5]
+
+    return Response(trending_collections)
+
+@api_view(['GET'])
+def shop_recent_bids(request):
+    try:
+        recent_items = Item.objects.filter(
+            availability=AVAILABLE_CHOICE,
+            bid__isnull=False  # Has at least one bid
+        ).annotate(
+            latest_bid_time=Max('bid__time_of_bid')
+        ).order_by(
+            '-latest_bid_time'
+        )[:10]  # Last 10 items with bids
+
+        serializer = ItemSerializer(recent_items, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response(
+            {"error": f"Failed to fetch recent bids: {str(e)}"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+@api_view(['GET'])
+def shop_popular_items(request):
+    try:
+        popular_items = Item.objects.filter(
+            availability=AVAILABLE_CHOICE
+        ).annotate(
+            bid_count=Count('bid'),
+            save_count=Count('save'),
+            total_interactions=Count('bid') + Count('save')
+        ).filter(
+            total_interactions__gt=0
+        ).order_by(
+            '-total_interactions',
+            '-bid_count'
+        )[:10]
+
+        serializer = ItemSerializer(popular_items, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response(
+            {"error": f"Failed to fetch popular items: {str(e)}"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+@api_view(['GET'])
+def shop_cheapest_in_popular(request):
+    try:
+        # First get popular categories (those with most items and bids)
+        popular_categories = Collection.objects.annotate(
+            item_count=Count('item', filter=Q(item__availability=AVAILABLE_CHOICE)),
+            bid_count=Count('item__bid')
+        ).filter(
+            item_count__gt=0
+        ).order_by('-bid_count', '-item_count')[:5]
+
+        # Then get cheapest available items from these categories
+        cheapest_items = Item.objects.filter(
+            availability=AVAILABLE_CHOICE,
+            collection__in=popular_categories
+        ).order_by(
+            'starting_price'
+        )[:10]
+
+        serializer = ItemSerializer(cheapest_items, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response(
+            {"error": f"Failed to fetch cheapest items: {str(e)}"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+@api_view(['GET'])
+def shop_by_rating(request):
+    try:
+        rated_items = Item.objects.filter(
+            availability=AVAILABLE_CHOICE
+        ).annotate(
+            avg_rating=Avg('review__rating')
+        ).filter(
+            avg_rating__gte=3.0,
+            avg_rating__lte=3.9
+        ).order_by(
+            '-avg_rating',
+            'starting_price'  # Secondary sort by price
+        )[:10]
+
+        serializer = ItemSerializer(rated_items, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response(
+            {"error": f"Failed to fetch rated items: {str(e)}"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 # use this to register and update account settings
 class AccountViewSet(viewsets.ModelViewSet):
@@ -208,7 +317,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         try:
             account = self.get_object()
             profile = account.profile
-            pending_bids = Bid.objects.filter(profile=profile, item__availability=AVAILABLE_CHOICE).select_related('item')
+            pending_bids = Bid.objects.filter(profile=profile, item__availability=AVAILABLE_CHOICE, winner_status__in=[WINNING_INELIGIBLE_CHOICE, WINNING_PENDING_CHOICE]).select_related('item')
 
             serializer = BidSerializer(pending_bids, many=True)
             return Response(
@@ -222,7 +331,84 @@ class AccountViewSet(viewsets.ModelViewSet):
                 {"error": f"Failed to fetch transactions: {str(e)}"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor, IsNotSuspended], url_path='accept-win')
+    def accept_win(self, request):
+        try:
+            bid_id = request.data.get('id', None)
+            winning_bid = Bid.objects.get(
+                id=bid_id,
+                profile=request.user.account.profile,
+                winner_status=WINNING_PENDING_CHOICE
+            )
+
+            seller_account = winning_bid.item.profile.account
+            buyer_account = request.user.account
+            item = winning_bid.item
+
+            complete_transaction(
+                seller=seller_account,
+                buyer=buyer_account,
+                amount=winning_bid.bid_price
+            )
+
+            buyer_account.get_VIP_discount()
+            buyer_account.update_points(winning_bid.bid_price)
+
+            transaction = Transaction.objects.create(
+                seller=seller_account,
+                buyer=buyer_account,
+                bid=winning_bid
+            )
+
+            seller_account.check_vip_eligibility()
+            buyer_account.check_vip_eligibility()
+
+            item.availability = SOLD_CHOICE
+            item.winning_bid = winning_bid
+            item.save()
+
+            winning_bid.bid.winner_status = WINNING_APPROVED_CHOICE
+            winning_bid.save()
+
+            EmailNotifications.notify_sale_confirmed(seller_account.user, item, buyer_account.user)
+       
+            serializer = TransactionSerializer(transaction)
+            return Response(serializer.data, status=status.HTTP_200_OK)        
+        except Exception as e:
+            return Response({"error": f"Failed to accept win: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        
     
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsNotVisitor, IsNotSuspended], url_path='reject-win')
+    def reject_win(self, request):
+        try:
+            bid_id = request.data.get('id', None)
+            winning_bid = Bid.objects.get(
+                id=bid_id,
+                profile=request.user.account.profile,
+                winner_status=WINNING_PENDING_CHOICE
+            )
+
+            winning_bid.winner_status = WINNING_REJECTED_CHOICE
+            winning_bid.save()
+            item = winning_bid.item
+            item.winning_bid = None
+            item.save()
+
+            seller_user = winning_bid.item.profile.account.user
+            buyer_user = request.user
+
+            EmailNotifications.notify_sale_rejected(seller_user, item, buyer_user)
+
+            return Response({
+                "message": "Win rejected."
+            }, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({
+                "error": "Failed to reject win."
+            }, status=status.HTTP_400_BAD_REQUEST)
+     
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsNotSuspended], url_path='view-current-balance')
     def view_current_balance(self, request, pk=None):
         account = self.get_object()
@@ -256,6 +442,28 @@ class AccountViewSet(viewsets.ModelViewSet):
                 {"error": "Invalid amount entered."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsNotSuspended], url_path='view-current-points')
+    def view_current_points(self, request, pk=None):
+        account = self.get_object()
+        try:
+            current_points = account.points
+            return Response({"balance": current_points})
+        except Exception as e:
+            return Response({"error": f"Failed to fetch points: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor, IsNotSuspended], url_path='add-points-to-balance')
+    def add_points_to_balance(self, request, pk=None):
+        account = self.get_object()
+        total_points = account.points
+        total_balance = account.balance
+
+        points_to_usd = total_points * 0.01
+        total_balance += points_to_usd
+
+        account.balance = total_balance
+        account.points = 0
+        account.save()
     
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor, IsSuspended], url_path='pay-suspension-fine')
     def pay_suspension_fine(self, request, pk=None):
@@ -266,7 +474,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         account.save() 
 
         if account.balance < 0:
-            current_balance = account.balance()
+            current_balance = account.balance
             account_user = account.user
             EmailNotifications.notify_account_balance_insufficient(account_user, current_balance)
 
@@ -303,6 +511,47 @@ class AccountViewSet(viewsets.ModelViewSet):
                 EmailNotifications.notify_quit_application_received(user)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsVisitor], url_path='apply-to-be-user')
+    def apply_to_be_user(self, request, pk=None):
+        # Check if there's already a pending application
+        existing_application = UserApplication.objects.filter(
+            account=request.user.account,
+            status=REQUEST_PENDING_CHOICE
+        ).exists()
+
+        if existing_application:
+            return Response(
+                {"error": "You already have a pending application"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # get captcha
+        if request.method == 'GET':
+            question_data = generate_random_arithmetic_question()
+            request.session['captcha_answer'] = question_data['answer']
+            return Response({
+                "question": question_data['question']
+            })
+        # verify captcha and create application
+        elif request.method == 'POST':
+            user_answer = request.data.get('answer')
+            actual_answer = request.session.get('captcha_answer')
+
+            if int(user_answer) == actual_answer:
+                application = UserApplication.objects.create(
+                    account=request.user.account,
+                    captcha_completed=True
+                )
+                EmailNotifications.notify_user_application_received(request.user)
+                return Response({
+                    "message": "Application submitted successfully",
+                    "application_id": application.id
+                })
+            return Response(
+                {"error": "Incorrect captcha answer"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class SignInView(APIView):
     permission_classes = [AllowAny]
@@ -431,6 +680,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
         except Profile.DoesNotExist:
             raise NotFound({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
     
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='me')
+    def my_profile(self, request):
+        profile = request.user.account.profile
+        serializer = self.get_serializer(profile)
+        return Response (serializer.data)
+    
     # update profile
     # /api/profiles/edit-profile
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsOwner], url_path='edit-profile')
@@ -515,24 +770,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsVisitor], url_path='apply-to-be-user')
-    def apply_to_be_user(self, request, pk=None):
-        # get captcha
-        if request.method == 'GET':
-            question_data = generate_random_arithmetic_question()
-            request.session['captcha_answer'] = question_data['answer']
-            return Response({
-                "question": question_data['question']
-            })
-        # verify captcha
-        elif request.method == 'POST':
-            user_answer = request.data.get('answer')
-            actual_answer = request.session.get('captcha_answer')
-
-            if int(user_answer) == actual_answer:
-                return Response({"valid": True})
-            return Response({"valid": False})
 
 
 # now work on item views
@@ -744,11 +981,25 @@ class ItemViewSet(viewsets.ModelViewSet):
         
         bid_amount = Decimal(request.data.get('bid_price'))
         if bid_amount <= item.highest_bid:
-            return Response({"error": "Bid must be higher than current bid."})
+            return Response(
+                {"error": "Bid must be higher than current bid."},
+                status=status.HTTP_400_BAD_REQUEST)
         if bid_amount > account.balance:
-            return Response({"error": "Insufficient funds."}, status=status.HTTP_402_PAYMENT_REQUIRED)
+            return Response(
+                {"error": "Insufficient funds."}, 
+                status=status.HTTP_402_PAYMENT_REQUIRED)
         if bid_amount <= 0:
-            return Response({"error": "Invalid bid amount."})
+            return Response(
+                {"error": "Invalid bid amount."},
+                status=status.HTTP_400_BAD_REQUEST)
+        if bid_amount < item.minimum_bid:
+            return Response({
+                "error": f"Bid must be at least ${item.minimum_bid}"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        if bid_amount > item.maximum_bid:
+            return Response({
+                "error": f"Bid cannot exceed ${item.maximum_bid}"
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         highest_bid = item.highest_bid
         highest_bid_obj = Bid.objects.filter(item=item, bid_price=highest_bid).first()
@@ -805,8 +1056,50 @@ class ItemViewSet(viewsets.ModelViewSet):
             return Response({
                 "error": f"Failed to change deadline: {str(e)}"
             }, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsNotSuspended, IsOwner], url_path='view-item-bids')
+    def view_item_bids(self, request, pk=None):
+        item = self.get_object()
+        profile = request.user.account.profile
+        bids = Bid.objects.filter(profile=profile, item=item)
 
+        serializer = BidSerializer(bids, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotSuspended, IsOwner, CanBidOn], url_path='choose-winner')
+    def choose_winner(self, request, pk=None):
+        try:
+            item = self.get_object()
+            try:
+                bid_id = request.data.get('id')
+                winning_bid = Bid.objects.get(id=bid_id, item=item)
+            except Bid.DoesNotExist:
+                return Response(
+                    {
+                        "error": "Bid not found."
+                    }, status=status.HTTP_404_NOT_FOUND
+                )
+        
+            item.winning_bid = winning_bid
+            item.save()
 
+            winning_bid.winner_status = WINNING_PENDING_CHOICE
+            winning_bid.save()
+
+            EmailNotifications.notify_bid_won(
+                buyer_account,
+                item,
+                winning_bid.bid_price,
+            )
+
+            serializer = BidSerializer(winning_bid)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"error": f"Failed to choose winner: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer

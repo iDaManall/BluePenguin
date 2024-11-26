@@ -8,7 +8,7 @@ class EmailNotifications:
     @staticmethod
     def notify_bid_won(user, item, bid_price):
         subject = f"Congratulations! You've won the auction for {item.title}"
-        message = f"You have won the auction for {item.title} with your bid of {bid_price}!"
+        message = f"You have won the auction for {item.title} with your bid of ${bid_price}!"
         user.email_user(
             subject=subject,
             message=message,
@@ -46,6 +46,28 @@ class EmailNotifications:
         else:
             subject = f"24 hours left to bid on {item.title}"
             message = f"The deadline for {item.title} is in 24 hours. Log in to secure your spot in first place if you haven't already!"
+        user.email_user(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER
+        )
+    
+    # user is seller, winner is user instance
+    @staticmethod
+    def notify_sale_confirmed(user, item, winner):
+        subject = "Transaction Accepted."
+        message = f"{winner.username} has accepted the transaction for {item.title}. Your balance has now been updated, you may proceed to 'Next Actions' to ship the item."
+        user.email_user(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER
+        )
+
+    # user is seller, winner is user instance
+    @staticmethod
+    def notify_sale_rejected(user, item, winner):
+        subject = "Transaction Rejected."
+        message = f"{winner.username} has rejected the transaction for {item.title}. You must log in and select a new winner before your item's deadline, or else your item will be expired."
         user.email_user(
             subject=subject,
             message=message,
@@ -130,7 +152,7 @@ class EmailNotifications:
     @staticmethod
     def notify_VIP_status_earned(user):
         subject = "VIP Status Earned"
-        message = "Your account has earned VIP status! It currently has over $5k balance, has no complaints, and 5+ transactions."
+        message = "Your account has earned VIP status! It currently has over $5k balance, has no complaints, and 5+ transactions. You now have a 10 percent on all transactions you win and accept."
         user.email_user(
             subject=subject,
             message=message,
@@ -217,6 +239,34 @@ class EmailNotifications:
             from_email=settings.EMAIL_HOST_USER
         )
 
+    @staticmethod
+    def notify_account_reactivated(user):
+        subject = "Account Reactivated Notice"
+        message = "Your account has been reactivated by BluePenguin administration."
+        user.email_user(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER
+        )
+
+    @staticmethod
+    def notify_user_application_received(user):
+        subject = "User Application Received"
+        message = "Your application to become a User has been received and is under review."
+        user.email_user(subject=subject, message=message)
+
+    @staticmethod
+    def notify_user_application_approved(user):
+        subject = "User Application Approved"
+        message = "Your application to become a User has been approved! You now have full user privileges."
+        user.email_user(subject=subject, message=message)
+
+    @staticmethod
+    def notify_user_application_rejected(user):
+        subject = "User Application Rejected"
+        message = "Your application to become a User has been rejected by BluePenguin administration."
+        user.email_user(subject=subject, message=message)
+
 def upload_to_gcs(file, destination_blob_name):
     client = storage.Client.from_service_account_json(settings.GOOGLE_APPLICATION_CREDENTIALS)
     bucket = client.bucket(settings.GOOGLE_CLOUD_STORAGE_BUCKET)
@@ -231,6 +281,7 @@ def generate_random_arithmetic_question():
         (operator.add, "+"),
     ]
 
+# 8 ÷ 2(2+2)
     inner_paren_num1 = random.randint(1,10)
     inner_paren_num2 = random.randint(1,10)
 
@@ -250,3 +301,16 @@ def generate_random_arithmetic_question():
         "answer": answer
     }
 
+# pass account instances
+def complete_transaction(seller, buyer, amount):
+    seller_balance = seller.balanace
+    buyer_balance = buyer.balance
+
+    seller_balance += amount
+    buyer_balance -= amount
+
+    seller.balance = seller_balance
+    seller.save()
+
+    buyer.balance = buyer_balance
+    buyer.save()
