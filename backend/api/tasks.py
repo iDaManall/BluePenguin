@@ -39,40 +39,8 @@ def check_auction_deadlines():
     )
 
     for item in items_ended:
-        winning_bid = item.select_winning_bid()
-
-        if winning_bid:
-            seller_account = item.profile.account
-            seller_account.balance += item.winning_bid.bid_price
-            seller_account.save()
-
-            buyer_account = winning_bid.profile.account
-            buyer_account.balance -= item.winning_bid.bid_price
-            buyer_account.save()
-            
-            buyer_account.get_VIP_discount(item.winning_bid.bid_price)
-
-            Transaction.objects.create(
-                seller=seller_account,
-                buyer=buyer_account,
-                bid=winning_bid,
-            )
-
-            seller_account.check_vip_eligibility()
-            buyer_account.check_vip_eligibility()
-
-            EmailNotifications.notify_bid_won(
-                winning_bid.profile.account.user,
-                item,
-                winning_bid.bid_price,
-            )
-
-            item.availability=SOLD_CHOICE
-            item.save()
-
-        else:
-            item.availability=EXPIRED_CHOICE
-            item.save()
+        item.availability = EXPIRED_CHOICE
+        item.save()
 
         EmailNotifications.notify_deadline_to_seller(
             item.profile.account.user,

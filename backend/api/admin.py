@@ -48,3 +48,17 @@ class QuitRequestAdmin(admin.ModelAdmin):
 
             user = deletion_request.account.user
             EmailNotifications.notify_deletion_rejected(user)
+
+@admin.register(Account)
+class AccountAdmin(admin.ModelAdmin):
+    list_display = ('user', 'is_suspended', 'suspension_strikes')
+    list_filter = ('is_suspended',)
+    actions = ['reactivate_accounts']
+
+    def reactivate_accounts(self, request, queryset):
+        for account in queryset:
+            account.is_suspended = False
+            account.save()
+
+            user = account.user
+            EmailNotifications.notify_account_reactivated(user)

@@ -64,6 +64,7 @@ class Account(models.Model):
     is_suspended = models.BooleanField(default=False)
     suspension_fine_paid = models.BooleanField(default=False)
     suspension_strikes = models.PositiveIntegerField(default=0)
+    points = models.PositiveIntegerField(null=True, blank=True, default=0)
 
     def delete_account_user_profile(self):
         try:
@@ -121,6 +122,15 @@ class Account(models.Model):
             new_price = actual_price * 0.10
             self.balance += new_price
             self.save()
+    
+    # amount is amount paid during transaction
+    def update_points(self, amount):
+        points_earned = amount
+        total_points = self.points
+        total_points += points_earned
+        self.points = total_points
+        self.save()
+        
 
     '''
     def set_password(self, user_password):
@@ -199,6 +209,7 @@ class Bid(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     time_of_bid = models.DateTimeField()
     status = models.CharField(max_length=3, choices=BID_STATUS_CHOICES)
+    winner_status = models.CharField(max_length=1, choices=WINNING_STATUS_CHOICES, default=WINNING_INELIGIBLE_CHOICE)
 
 
 class Transaction(models.Model):
