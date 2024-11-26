@@ -474,7 +474,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         account.save() 
 
         if account.balance < 0:
-            current_balance = account.balance()
+            current_balance = account.balance
             account_user = account.user
             EmailNotifications.notify_account_balance_insufficient(account_user, current_balance)
 
@@ -1055,41 +1055,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": f"Failed to choose winner: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         
-        '''
-        seller_account = item.profile.account
-        buyer_account = winning_bid.profile.account
-
-        complete_transaction(seller=seller_account, buyer=buyer_account, amount=winning_bid.bid_price)
-
-        buyer_account.get_VIP_discount()
-
-        transaction = Transaction.objects.create(
-            seller=seller_account,
-            buyer=buyer_account,
-            bid=winning_bid
-        )
-
-        seller_account.check_vip_eligibility()
-        buyer_account.check_vip_eligibility()
-
-        item.availability = SOLD_CHOICE
-        item.winning_bid = winning_bid
-        item.save()
-        '''
-
-    
-
-        '''
-        serializer = TransactionSerializer(transaction)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        '''
-
-
-
-
+        
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer

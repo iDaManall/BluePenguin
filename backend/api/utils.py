@@ -152,7 +152,7 @@ class EmailNotifications:
     @staticmethod
     def notify_VIP_status_earned(user):
         subject = "VIP Status Earned"
-        message = "Your account has earned VIP status! It currently has over $5k balance, has no complaints, and 5+ transactions."
+        message = "Your account has earned VIP status! It currently has over $5k balance, has no complaints, and 5+ transactions. You now have a 10 percent on all transactions you win and accept."
         user.email_user(
             subject=subject,
             message=message,
