@@ -72,7 +72,7 @@ export const authService = {
 
 export const accountService = {
   updateSettings: (pk, settingsData, token) => 
-    apiFetch(ACCOUNT_ENDPOINTS.UPDATE_SETTINGS(pk), 'PUT', settingsData, token),
+    apiFetch(ACCOUNT_ENDPOINTS.UPDATE_SETTINGS(pk), 'PATCH', settingsData, token),
   setShippingAddress: (pk, addressData, token) => 
     apiFetch(ACCOUNT_ENDPOINTS.SET_SHIPPING_ADDRESS(pk), 'POST', addressData, token),
   setPaypalDetails: (pk, paypalData, token) => 

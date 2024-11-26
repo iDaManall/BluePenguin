@@ -57,7 +57,7 @@ const Register = () => {
 
   return (
     <div>
-    <nav className = "nav-bar">
+    {/* <nav className = "nav-bar">
     <div className = "logo">
       <a href="#">BLUEPENGUIN</a>
     </div>
@@ -72,7 +72,7 @@ const Register = () => {
     
     <ul><li> <a href = '#' className = 'cart'><i className='bx  hover-action bxs-cart bx-md'></i></a></li></ul>
    
-</nav>
+    </nav> */}
 
     <div className="signup-container">
       <div className="signup-box">

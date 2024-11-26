@@ -5,7 +5,7 @@ export const AUTH_ENDPOINTS = {
   };
   
   export const ACCOUNT_ENDPOINTS = {
-    UPDATE_SETTINGS: (pk) => `/api/accounts/${pk}/update-account-settings`,
+    UPDATE_SETTINGS: (pk) => `/api/accounts/${pk}/update-account-settings/`,
     SET_SHIPPING_ADDRESS: (pk) => `/api/accounts/${pk}/set-shipping-address`,
     SET_PAYPAL_DETAILS: (pk) => `/api/accounts/${pk}/set-paypal-details`,
     SET_CARD_DETAILS: (pk) => `/api/accounts/${pk}/set-card-details`,

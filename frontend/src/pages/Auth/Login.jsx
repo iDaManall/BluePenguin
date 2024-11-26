@@ -41,7 +41,7 @@ const Login = () => {
 
   return (
     <div>
-      <nav className = "nav-bar">
+      {/* <nav className = "nav-bar">
           <div className = "logo">
             <a href="#">BLUEPENGUIN</a>
           </div>
@@ -56,7 +56,7 @@ const Login = () => {
           
           <ul><li> <a href = '#' className = 'cart'><i className='bx  hover-action bxs-cart bx-md'></i></a></li></ul>
          
-      </nav>
+      </nav> */}
 
 
     <div className="login-container">

@@ -360,6 +360,7 @@ class SignInView(APIView):
                 )
 
             user_data = {
+                'id': user.id,  # Add this line
                 'email': user.email,
                 'username': user.username,
                 'first_name': user.first_name,
