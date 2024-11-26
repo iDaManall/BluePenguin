@@ -214,9 +214,9 @@ class AccountViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # UPDATE all basic info like first name, last name, email, username, and password
-    @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsOwner, IsNotSuspended], url_path='update-account-settings')
+    @action(detail=False, methods=['patch'], permission_classes=[IsAuthenticated, IsOwner, IsNotSuspended], url_path='update-account-settings')
     def update_settings(self, request, pk=None):
-        account = self.get_object() # since you are updating an account, get the account object
+        account = request.user.account # since you are updating an account, get the account object
 
         serializer = self.get_serializer(account, data=request.data, partial=True) # allows partial update
 
@@ -226,7 +226,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # set shipping address
-    @action(detail=True, methods=['post', 'patch'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor, IsNotSuspended], url_path='set-shipping-address')
+    @action(detail=False, methods=['post', 'patch'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor, IsNotSuspended], url_path='set-shipping-address')
     def set_shipping_address(self, request, pk=None):
         account = self.get_object(pk)
 
