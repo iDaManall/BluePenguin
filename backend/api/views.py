@@ -679,6 +679,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
         except Profile.DoesNotExist:
             raise NotFound({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
     
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='me')
+    def my_profile(self, request):
+        profile = request.user.account.profile
+        serializer = self.get_serializer(profile)
+        return Response (serializer.data)
+    
     # update profile
     # /api/profiles/edit-profile
     @action(detail=True, methods=['patch'], permission_classes=[IsAuthenticated, IsOwner], url_path='edit-profile')
@@ -1059,7 +1065,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         serializer = BidSerializer(bids, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotSuspended, IsOwner, CanBidOn], url_path='view_item')
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotSuspended, IsOwner, CanBidOn], url_path='choose-winner')
     def choose_winner(self, request, pk=None):
         try:
             item = self.get_object()
