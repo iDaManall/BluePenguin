@@ -75,6 +75,9 @@
 
   .input-icon{
     display:flex;
+    align-items: center;
+    width: 100%;
+    gap: 10px;
   }
   
   .form-group label {
@@ -85,6 +88,12 @@
     margin-bottom: 0.5rem;
   }
   
+  .form-group input {
+    width: 100%;
+    padding: 8px;
+    font-size: 1rem;
+  }
+
   .error-message {
     color: #ef4444;
     text-align: center;
@@ -96,7 +105,7 @@
     background-color: #3b82f6;
     color: white;
     font-weight: bold;
-    padding: 2.5rem 1.5rem;
+    padding: 1rem;
     border-radius: 0.25rem;
     border: none;
     cursor: pointer;
@@ -201,3 +210,18 @@
       color:rgb(150, 150, 150);
     }
 
+    .register-link {
+      text-align: center;
+      margin-top: 1rem;
+      color: white;
+    }
+    
+    .register-link a {
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    
+    .register-link a:hover {
+      text-decoration: underline;
+    }
