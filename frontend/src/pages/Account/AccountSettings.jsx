@@ -56,9 +56,9 @@ const AccountSettings = () => {
 
     try {
       const token = localStorage.getItem('access_token');
-      const userId = localStorage.getItem('user_id');
+    //   const userId = localStorage.getItem('user_id');
 
-      if (!token || !userId) {
+      if (!token) {
         navigate('/login');
         return;
       }
