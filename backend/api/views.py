@@ -173,7 +173,7 @@ def shop_by_rating(request):
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsSupabaseAuthenticated]
 
     # user registration
     @action(detail=False, methods=['post'], url_path='register', permission_classes=[AllowAny])
@@ -214,7 +214,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # UPDATE all basic info like first name, last name, email, username, and password
-    @action(detail=False, methods=['patch'], permission_classes=[IsAuthenticated, IsOwner, IsNotSuspended], url_path='update-account-settings')
+    @action(detail=False, methods=['patch'], permission_classes=[IsSupabaseAuthenticated, IsOwner, IsNotSuspended], url_path='update-account-settings')
     def update_settings(self, request, pk=None):
         account = request.user.account # since you are updating an account, get the account object
 
@@ -224,9 +224,19 @@ class AccountViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsSupabaseAuthenticated, IsOwner], url_path='view-email')
+    def view_email(self, request):
+        try:
+            account = request.user.account
+            return Response({
+                "email": account.user.email
+            })
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     # set shipping address
-    @action(detail=False, methods=['post', 'patch'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor, IsNotSuspended], url_path='set-shipping-address')
+    @action(detail=False, methods=['post', 'patch', 'get'], permission_classes=[IsSupabaseAuthenticated, IsOwner, IsNotVisitor, IsNotSuspended], url_path='set-shipping-address')
     def set_shipping_address(self, request, pk=None):
         account = request.user.account
 
@@ -249,9 +259,15 @@ class AccountViewSet(viewsets.ModelViewSet):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        elif request.method == 'GET':
+            if not account.shipping_address:
+                return Response(None)
+            serializer = ShippingAddressSerializer(account.shipping_address)
+            return Response(serializer.data)
     
     # set card details
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor, IsNotSuspended], url_path='set-card-details')
+    @action(detail=False, methods=['post', 'patch', 'get'], permission_classes=[IsSupabaseAuthenticated, IsOwner, IsNotVisitor, IsNotSuspended], url_path='set-card-details')
     # if detail=True, this means the URL would include {pk}/set-card-details
     def set_card_details(self, request):
         account = request.user.account
@@ -283,10 +299,15 @@ class AccountViewSet(viewsets.ModelViewSet):
                 except IntegrityError:
                     return Response({"error": "Card number already in use"}, status=status.HTTP_400_BAD_REQUEST)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        elif request.method == 'GET':
+            if not account.card_details:
+                return Response(None)
+            serializer = CardDetailsSerializer(account.card_details)
+            return Response(serializer.data)
     
     # set paypal details
-    @action(detail=False, methods=['post', 'patch'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor, IsNotSuspended], url_path='set-paypal-details')
-    def update_paypal_details(self, request, pk=None):
+    @action(detail=False, methods=['post', 'patch', 'get'], permission_classes=[IsSupabaseAuthenticated, IsOwner, IsNotVisitor, IsNotSuspended], url_path='set-paypal-details')
+    def set_paypal_details(self, request, pk=None):
         account = request.user.account
 
         if request.method == 'POST':
@@ -311,8 +332,13 @@ class AccountViewSet(viewsets.ModelViewSet):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        elif request.method == 'GET':
+            if not account.paypal_details:
+                return Response(None)
+            serializer = PayPalDetailsSerializer(account.paypal_details)
+            return Response(serializer.data)
     
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsNotVisitor, IsNotSuspended], url_path='view-pending-bids')
+    @action(detail=False, methods=['get'], permission_classes=[IsSupabaseAuthenticated, IsNotVisitor, IsNotSuspended], url_path='view-pending-bids')
     def view_pending_bids(self, request):
         try:
             account = request.user.account
@@ -332,7 +358,7 @@ class AccountViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor, IsNotSuspended], url_path='accept-win')
+    @action(detail=False, methods=['post'], permission_classes=[IsSupabaseAuthenticated, IsNotVisitor, IsNotSuspended], url_path='accept-win')
     def accept_win(self, request):
         try:
             bid_id = request.data.get('id', None)
@@ -379,7 +405,7 @@ class AccountViewSet(viewsets.ModelViewSet):
             return Response({"error": f"Failed to accept win: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         
     
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsNotVisitor, IsNotSuspended], url_path='reject-win')
+    @action(detail=False, methods=['get'], permission_classes=[IsSupabaseAuthenticated, IsNotVisitor, IsNotSuspended], url_path='reject-win')
     def reject_win(self, request):
         try:
             bid_id = request.data.get('id', None)
@@ -409,7 +435,7 @@ class AccountViewSet(viewsets.ModelViewSet):
                 "error": "Failed to reject win."
             }, status=status.HTTP_400_BAD_REQUEST)
      
-    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsNotSuspended], url_path='view-current-balance')
+    @action(detail=True, methods=['get'], permission_classes=[IsSupabaseAuthenticated, IsNotSuspended], url_path='view-current-balance')
     def view_current_balance(self, request, pk=None):
         account = self.get_object()
         try:
@@ -418,7 +444,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": f"Failed to fetch account balance: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor, IsNotSuspended], url_path='add-to-balance')
+    @action(detail=False, methods=['post'], permission_classes=[IsSupabaseAuthenticated, IsNotVisitor, IsNotSuspended], url_path='add-to-balance')
     def add_to_balance(self, request, pk=None):
         account = request.user.account
         balance = account.balance
@@ -443,7 +469,7 @@ class AccountViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsNotSuspended], url_path='view-current-points')
+    @action(detail=False, methods=['get'], permission_classes=[IsSupabaseAuthenticated, IsNotSuspended], url_path='view-current-points')
     def view_current_points(self, request, pk=None):
         account = request.user.profile
         try:
@@ -452,7 +478,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": f"Failed to fetch points: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor, IsNotSuspended], url_path='add-points-to-balance')
+    @action(detail=False, methods=['post'], permission_classes=[IsSupabaseAuthenticated, IsNotVisitor, IsNotSuspended], url_path='add-points-to-balance')
     def add_points_to_balance(self, request, pk=None):
         account = request.user.account
         total_points = account.points
@@ -465,7 +491,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         account.points = 0
         account.save()
     
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor, IsSuspended], url_path='pay-suspension-fine')
+    @action(detail=False, methods=['post'], permission_classes=[IsSupabaseAuthenticated, IsNotVisitor, IsSuspended], url_path='pay-suspension-fine')
     def pay_suspension_fine(self, request, pk=None):
         account = request.user.account
         account.balance -= 50.00
@@ -485,7 +511,7 @@ class AccountViewSet(viewsets.ModelViewSet):
             }
         )
     
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor, IsNotSuspended], url_path='request-quit')
+    @action(detail=False, methods=['post'], permission_classes=[IsSupabaseAuthenticated, IsNotVisitor, IsNotSuspended], url_path='request-quit')
     def request_quit(self, request, pk=None):
         user = request.user
         account = user.account
@@ -512,7 +538,7 @@ class AccountViewSet(viewsets.ModelViewSet):
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-    @action(detail=False, methods=['get', 'post'], permission_classes=[IsAuthenticated, IsVisitor], url_path='apply-to-be-user')
+    @action(detail=False, methods=['get', 'post'], permission_classes=[IsSupabaseAuthenticated, IsVisitor], url_path='apply-to-be-user')
     def apply_to_be_user(self, request, pk=None):
         # Check if there's already a pending application
         existing_application = UserApplication.objects.filter(
@@ -680,14 +706,14 @@ class ProfileViewSet(viewsets.ModelViewSet):
         except Profile.DoesNotExist:
             raise NotFound({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
     
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='me')
+    @action(detail=False, methods=['get'], permission_classes=[IsSupabaseAuthenticated], url_path='me')
     def my_profile(self, request):
         profile = request.user.account.profile
         serializer = self.get_serializer(profile)
         return Response (serializer.data)
     
     # update profile
-    @action(detail=False, methods=['patch'], permission_classes=[IsAuthenticated, IsOwner], url_path='edit-profile')
+    @action(detail=False, methods=['patch'], permission_classes=[IsSupabaseAuthenticated, IsOwner], url_path='edit-profile')
     def update_profile(self, request, pk=None):
         profile = request.user.account.profile
 
@@ -699,7 +725,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # /api/profiles/<pk>/rate-profile
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotOwner, IsNotVisitor], url_path='rate-profile')
+    @action(detail=True, methods=['post'], permission_classes=[IsSupabaseAuthenticated, IsNotOwner, IsNotVisitor], url_path='rate-profile')
     def rate_profile(self, request, pk=None):
         ratee = self.get_object()
         ratee_account = ratee.account
@@ -724,7 +750,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # /api/profiles/saves
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsSaveOwner], url_path='saves')
+    @action(detail=False, methods=['get'], permission_classes=[IsSupabaseAuthenticated, IsSaveOwner], url_path='saves')
     def view_saves(self, request):
         profile = request.user.account.profile
         saves = Save.objects.filter(profile=profile)
@@ -733,7 +759,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     # /api/profiles/delete-saved-item
-    @action(detail=False, methods=['delete'], permission_classes=[IsAuthenticated, IsSaveOwner], url_path='delete-saved-item')
+    @action(detail=False, methods=['delete'], permission_classes=[IsSupabaseAuthenticated, IsSaveOwner], url_path='delete-saved-item')
     def delete_save(self, request):
         save_id = request.data.get('id', None)
 
@@ -747,7 +773,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
     
     # /api/profiles/<pk>/report-user (pk of the user you want to report)
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor], url_path='report-user')
+    @action(detail=True, methods=['post'], permission_classes=[IsSupabaseAuthenticated, IsNotVisitor], url_path='report-user')
     def report(self, request):
         reportee = self.get_object()
         reportee_account = reportee.account
@@ -795,7 +821,7 @@ class ItemViewSet(viewsets.ModelViewSet):
     # delete an item
 
     # /api/items/post-item
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor], url_path='post-item')
+    @action(detail=False, methods=['post'], permission_classes=[IsSupabaseAuthenticated, IsNotVisitor], url_path='post-item')
     def create_new_item(self, request):
         serializer = self.get_serializer(data=request.data)
 
@@ -812,14 +838,14 @@ class ItemViewSet(viewsets.ModelViewSet):
         return super().retrieve(request, *args, **kwargs)
     
     # /api/items/{pk}/delete-item
-    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor], url_path='delete-item')
+    @action(detail=True, methods=['delete'], permission_classes=[IsSupabaseAuthenticated, IsOwner, IsNotVisitor], url_path='delete-item')
     def delete_item(self, request, pk=None):
         item = self.get_object()
         item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
     # /api/items/{pk}/comment
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='comment')
+    @action(detail=True, methods=['post'], permission_classes=[IsSupabaseAuthenticated], url_path='comment')
     def comment(self, request):
         # configure the correct item and profile that commented
         item = self.get_object()
@@ -846,7 +872,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     # /api/items/{pk}/reply
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='reply')
+    @action(detail=True, methods=['post'], permission_classes=[IsSupabaseAuthenticated], url_path='reply')
     def reply(self, request):
         item = self.get_object()
         item_account = item.profile.account
@@ -874,7 +900,7 @@ class ItemViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
     
-    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated, IsCommentOwner], url_path='delete-comment')
+    @action(detail=True, methods=['delete'], permission_classes=[IsSupabaseAuthenticated, IsCommentOwner], url_path='delete-comment')
     def delete_comment(self, request):
         comment_id = request.data.get('id', None)
 
@@ -886,7 +912,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         comment.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
-    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated], url_path='like-comment')
+    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsSupabaseAuthenticated], url_path='like-comment')
     def like_comment(self, request):
             item = self.get_object()
             item_account = item.profile.account
@@ -921,7 +947,7 @@ class ItemViewSet(viewsets.ModelViewSet):
 
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated], url_path='dislike-comment')
+    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsSupabaseAuthenticated], url_path='dislike-comment')
     def dislike_comment(self, request):
         item = self.get_object()
         item_account = item.profile.account
@@ -956,7 +982,7 @@ class ItemViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-    @action(detail=True, methods=['POST'], permission_classes=[IsAuthenticated], url_path='save-item')
+    @action(detail=True, methods=['POST'], permission_classes=[IsSupabaseAuthenticated], url_path='save-item')
     def save_item(self, request):
         item = self.get_object()
         item_account = item.profile.account
@@ -970,7 +996,7 @@ class ItemViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, CanBidOn, IsNotVisitor, IsNotSeller], url_path='perform-bid')
+    @action(detail=True, methods=['post'], permission_classes=[IsSupabaseAuthenticated, CanBidOn, IsNotVisitor, IsNotSeller], url_path='perform-bid')
     def place_bid(self, request, pk=None):
         item = self.get_object()
         user = request.user
@@ -1019,7 +1045,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # next make a choice to change bid deadline and/or complete bid
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsOwner, IsNotVisitor], url_path='change-deadline')
+    @action(detail=True, methods=['post'], permission_classes=[IsSupabaseAuthenticated, IsOwner, IsNotVisitor], url_path='change-deadline')
     def change_deadline(self, request, pk=None):
         try:
             item = self.get_object()
@@ -1056,7 +1082,7 @@ class ItemViewSet(viewsets.ModelViewSet):
                 "error": f"Failed to change deadline: {str(e)}"
             }, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated, IsNotSuspended, IsOwner], url_path='view-item-bids')
+    @action(detail=True, methods=['get'], permission_classes=[IsSupabaseAuthenticated, IsNotSuspended, IsOwner], url_path='view-item-bids')
     def view_item_bids(self, request, pk=None):
         item = self.get_object()
         profile = request.user.account.profile
@@ -1065,7 +1091,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         serializer = BidSerializer(bids, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotSuspended, IsOwner, CanBidOn], url_path='choose-winner')
+    @action(detail=True, methods=['post'], permission_classes=[IsSupabaseAuthenticated, IsNotSuspended, IsOwner, CanBidOn], url_path='choose-winner')
     def choose_winner(self, request, pk=None):
         try:
             item = self.get_object()
@@ -1104,7 +1130,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     serializer_class = TransactionSerializer
     permission_classes = [IsAuthenticated, IsNotSuspended]
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsNotVisitor], url_path='seller-transactions')
+    @action(detail=False, methods=['get'], permission_classes=[IsSupabaseAuthenticated, IsNotVisitor], url_path='seller-transactions')
     def view_transactions(self, request):
         try:
             seller_account = request.user.account
@@ -1121,7 +1147,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsNotVisitor], url_path='awaiting-arrival')
+    @action(detail=False, methods=['get'], permission_classes=[IsSupabaseAuthenticated, IsNotVisitor], url_path='awaiting-arrival')
     def view_awaiting_arrivals(self, request):
         try:
             buyer_account = request.user.account
@@ -1141,7 +1167,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated, IsNotVisitor], url_path='next-actions')
+    @action(detail=False, methods=['get'], permission_classes=[IsSupabaseAuthenticated, IsNotVisitor], url_path='next-actions')
     def view_next_actions(self, request):
         try:
             account = request.user.account
@@ -1169,7 +1195,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsNotVisitor, IsSeller], url_path='ship')
+    @action(detail=True, methods=['post'], permission_classes=[IsSupabaseAuthenticated, IsNotVisitor, IsSeller], url_path='ship')
     def ship_item(self, request, pk=None):
         try:
             transaction = self.get_object()
@@ -1269,7 +1295,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
             )
     
     # if you have received the item, mark as received
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsBuyer], url_path='received-item')
+    @action(detail=True, methods=['post'], permission_classes=[IsSupabaseAuthenticated, IsBuyer], url_path='received-item')
     def received_item(self, request, pk=None):
         try: 
             transaction = self.get_object()
