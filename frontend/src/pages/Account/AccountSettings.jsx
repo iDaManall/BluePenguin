@@ -42,6 +42,18 @@ const AccountSettings = () => {
 //     fetchUserData();
 //   }, [navigate]);
 
+    useEffect(() => {
+        const checkAuth = () => {
+        const token = localStorage.getItem('access_token');
+        console.log('Account Settings - Token check:', !!token);
+
+        if (!token) {
+            navigate('/login');
+        }
+    };
+    
+    checkAuth();
+  }, []);
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -68,9 +80,10 @@ const AccountSettings = () => {
         delete updateData.password;
       }
 
-      await accountService.updateSettings(userId, updateData, token);
+      await accountService.updateSettings(updateData, token);
       setSuccess(true);
     } catch (err) {
+      console.error('Settings update error:', err);
       setError(err.message || 'Failed to update settings');
     }
   };

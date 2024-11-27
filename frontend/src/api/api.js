@@ -29,8 +29,17 @@ const apiFetch = async (endpoint, method = "GET", body = null, token = null) => 
     "Content-Type": "application/json",
   };
   
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
+  // Get token from localStorage if not provided
+  const authToken = token || localStorage.getItem('access_token');
+
+  // Debug log for token
+  console.log('Token being used:', authToken ? 'Present' : 'Missing');
+
+  if (authToken) {
+    // Ensure token doesn't have 'Bearer' prefix already
+    const tokenValue = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
+    headers.Authorization = tokenValue;
+    console.log('Auth header being sent:', headers.Authorization); // Debug log
   }
   
   try {
@@ -42,21 +51,24 @@ const apiFetch = async (endpoint, method = "GET", body = null, token = null) => 
       mode: 'cors'  // Add this line
     });
 
+    // Debug log for failed requests
     if (!response.ok) {
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `API Error: ${response.status}`);
-      } else {
-        throw new Error(`API Error: ${response.status}`);
-      }
+      console.log('Failed request details:', {
+        endpoint,
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
     }
 
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-      return await response.json();
+    if (response.status === 401) {
+      // Clear tokens and throw error
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      throw new Error('Session expired - please login again');
     }
-    return null;
+
+    return response.json();
   } catch (error) {
     console.error('API Call Error:', error);
     throw error;
