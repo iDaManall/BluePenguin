@@ -33,20 +33,21 @@ export const AuthProvider = ({ children }) => {
       }
   
       // Store tokens first
-      localStorage.setItem('access_token', djangoResponse.access_token);
+      // Store the complete token with Bearer prefix
+      const tokenWithBearer = `Bearer ${djangoResponse.access_token}`;
+      localStorage.setItem('access_token', tokenWithBearer);
       localStorage.setItem('refresh_token', djangoResponse.refresh_token);
       localStorage.setItem('user_id', djangoResponse.user.id);
 
       // Debug log
       console.log('AuthContext - Login successful:', {
-        hasAccessToken: !!localStorage.getItem('access_token'),
-        hasRefreshToken: !!localStorage.getItem('refresh_token'),
+        token: tokenWithBearer.substring(0, 20) + '...',
         userId: localStorage.getItem('user_id')
       });
 
       setUser({
         ...djangoResponse.user,
-        access_token: djangoResponse.access_token
+        access_token: tokenWithBearer
       });
 
       return djangoResponse;

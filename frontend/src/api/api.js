@@ -36,10 +36,12 @@ const apiFetch = async (endpoint, method = "GET", body = null, token = null) => 
   console.log('Token being used:', authToken ? 'Present' : 'Missing');
 
   if (authToken) {
-    // Ensure token doesn't have 'Bearer' prefix already
-    const tokenValue = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
-    headers.Authorization = tokenValue;
-    console.log('Auth header being sent:', headers.Authorization); // Debug log
+    // Use token exactly as stored (already includes 'Bearer' prefix)
+    headers.Authorization = authToken;
+    console.log('Auth header being sent:', {
+      headerValue: headers.Authorization.substring(0, 20) + '...',
+      endpoint
+    });
   }
   
   try {
@@ -51,26 +53,25 @@ const apiFetch = async (endpoint, method = "GET", body = null, token = null) => 
       mode: 'cors'  // Add this line
     });
 
-    // Debug log for failed requests
-    if (!response.ok) {
-      console.log('Failed request details:', {
+    // Debug unauthorized requests
+    if (response.status === 401) {
+      console.log('Unauthorized request:', {
         endpoint,
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
+        token: authToken ? 'Present' : 'Missing',
+        headers: headers
       });
     }
 
-    if (response.status === 401) {
-      // Clear tokens and throw error
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      throw new Error('Session expired - please login again');
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
     }
 
     return response.json();
   } catch (error) {
-    console.error('API Call Error:', error);
+    if (error.message.includes('401')) {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+    }
     throw error;
   }
 };
