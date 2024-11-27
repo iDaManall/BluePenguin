@@ -71,14 +71,14 @@ export const authService = {
 };
 
 export const accountService = {
-  updateSettings: (pk, settingsData, token) => 
-    apiFetch(ACCOUNT_ENDPOINTS.UPDATE_SETTINGS(pk), 'PUT', settingsData, token),
-  setShippingAddress: (pk, addressData, token) => 
-    apiFetch(ACCOUNT_ENDPOINTS.SET_SHIPPING_ADDRESS(pk), 'POST', addressData, token),
-  setPaypalDetails: (pk, paypalData, token) => 
-    apiFetch(ACCOUNT_ENDPOINTS.SET_PAYPAL_DETAILS(pk), 'POST', paypalData, token),
-  setCardDetails: (pk, cardData, token) => 
-    apiFetch(ACCOUNT_ENDPOINTS.SET_CARD_DETAILS(pk), 'POST', cardData, token),
+  updateSettings: (settingsData, token) => 
+      apiFetch(ACCOUNT_ENDPOINTS.UPDATE_SETTINGS, 'PATCH', settingsData, token),
+  setShippingAddress: (addressData, token) => 
+      apiFetch(ACCOUNT_ENDPOINTS.SET_SHIPPING_ADDRESS, 'POST', addressData, token),
+  setPaypalDetails: (paypalData, token) => 
+      apiFetch(ACCOUNT_ENDPOINTS.SET_PAYPAL_DETAILS, 'POST', paypalData, token),
+  setCardDetails: (cardData, token) => 
+      apiFetch(ACCOUNT_ENDPOINTS.SET_CARD_DETAILS, 'POST', cardData, token),
 };
 
 export const profileService = {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link,useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './Login.css';
 
@@ -41,7 +41,7 @@ const Login = () => {
 
   return (
     <div>
-      <nav className = "nav-bar">
+      {/* <nav className = "nav-bar">
           <div className = "logo">
             <a href="#">BLUEPENGUIN</a>
           </div>
@@ -55,7 +55,7 @@ const Login = () => {
           <ul><li> <a href = "#" className = "Account-Login">My Account</a></li></ul>
           
           <ul><li> <a href = '#' classNameName = 'cart'><i className='bx  hover-action bxs-cart bx-md'></i></a></li></ul>
-      </nav>
+      </nav> */}
 
     <div className="login-container">
       <div className="login-box">
@@ -96,6 +96,9 @@ const Login = () => {
           <button type="submit" className="submit-button">
             Login
           </button>
+          <div className="register-link">
+            First time? <Link to="/register">Register here!</Link>
+          </div>
         </form>
       </div>
       

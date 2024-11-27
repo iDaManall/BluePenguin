@@ -3,11 +3,9 @@ import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import Home from "./pages/Home/Home";
 import NotFound from "./pages/NotFound";
-import ProfileView from "./pages/Profile/ProfileView";
-import EditProfile from "./pages/Profile/EditProfile";
 import Navbar from "./components/NavBar";
 import { AuthProvider } from './context/AuthContext';
-
+import AccountSettings from "./pages/Account/AccountSettings";
 
 // clear refresh and access token when we log out, navigate to login page
 function Logout(){
@@ -34,9 +32,8 @@ function App() {
           <Route path = "/logout" element = {<Logout />} />
           <Route path = "/register" element = {<RegisterAndLogout />} />
           <Route path = "/home" element = {<Home />} />
-          <Route path="/profile/:id" element={<ProfileView />} />
-          <Route path="/profile/edit/:id" element={<EditProfile />} />
           <Route path = "*" element = {<NotFound />}></Route>
+          <Route path="/account/settings" element={<AccountSettings />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

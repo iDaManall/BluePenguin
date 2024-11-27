@@ -20,8 +20,8 @@ urlpatterns = [
     # explore page
     path('explore/trending-categories', shop_trending_categories, name='shop-trending-categories'),
     path('explore/recent-bids/', shop_recent_bids, name='shop-recent-bids'),
-    path('shop/popular/', shop_popular_items, name='shop-popular'),
-    path('shop/cheapest-popular/', shop_cheapest_in_popular, name='shop-cheapest-popular'),
-    path('shop/by-rating/', shop_by_rating, name='shop-by-rating'),
+    path('explore/popular/', shop_popular_items, name='shop-popular'),
+    path('explore/best-deals/', shop_cheapest_in_popular, name='shop-cheapest-popular'),
+    path('explore/by-rating/', shop_by_rating, name='shop-by-rating'),
 
 ]
