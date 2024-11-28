@@ -32,26 +32,28 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Failed to authenticate with backend');
       }
   
-      // Then authenticate with Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-  
-      if (error) {
-        console.error('Supabase auth error:', error);
-        throw error;
-      }
-      
-      // Store tokens
-      localStorage.setItem('access_token', djangoResponse.access_token);
+      // Store tokens first
+      // Store the complete token with Bearer prefix
+      const tokenWithBearer = `Bearer ${djangoResponse.access_token}`;
+      localStorage.setItem('access_token', tokenWithBearer);
       localStorage.setItem('refresh_token', djangoResponse.refresh_token);
-      localStorage.setItem('user_id', djangoResponse.user.id); // Add this line
+      localStorage.setItem('user_id', djangoResponse.user.id);
 
-      return {...data, djangoUser: djangoResponse};
+      // Debug log
+      console.log('AuthContext - Login successful:', {
+        token: tokenWithBearer.substring(0, 20) + '...',
+        userId: localStorage.getItem('user_id')
+      });
+
+      setUser({
+        ...djangoResponse.user,
+        access_token: tokenWithBearer
+      });
+
+      return djangoResponse;
     } catch (error) {
       console.error('Authentication error:', error);
-      throw new Error(error.message || 'Invalid login credentials');
+      throw error;
     }
   };
 

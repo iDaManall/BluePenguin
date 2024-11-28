@@ -29,34 +29,44 @@ const apiFetch = async (endpoint, method = "GET", body = null, token = null) => 
     "Content-Type": "application/json",
   };
   
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
+  // Get token from localStorage if not provided
+  const authToken = token || localStorage.getItem('access_token');
+
+  // // Debug log for token
+  // console.log('Token being used:', authToken ? 'Present' : 'Missing');
+
+  if (authToken) {
+    // Remove any existing 'Bearer ' prefix before adding it
+    const cleanToken = authToken.replace('Bearer ', '');
+    // headers.Authorization = `Bearer ${cleanToken}`;
+    // Use a custom header instead
+    headers['X-Auth-Token'] = `Bearer ${cleanToken}`;
   }
   
+  // Log headers safely
+  console.log('Sending request with headers:', headers);
+
+  const config = {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : null,
+    mode: 'cors',
+    credentials: 'include',
+  };
+
   try {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : null,
-      credentials: 'include',
-      mode: 'cors'  // Add this line
+    const response = await fetch(`${BASE_URL}${endpoint}`, config);
+    // Log response safely
+    console.log('Response received:', {
+      status: response.status,
+      statusText: response.statusText
     });
 
     if (!response.ok) {
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `API Error: ${response.status}`);
-      } else {
-        throw new Error(`API Error: ${response.status}`);
-      }
+      throw new Error(`API Error: ${response.status}`);
     }
 
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-      return await response.json();
-    }
-    return null;
+    return response.json();
   } catch (error) {
     console.error('API Call Error:', error);
     throw error;

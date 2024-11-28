@@ -19,7 +19,7 @@ class IsOwner(BasePermission):
         
         return False
     
-    
+'''    
 class IsNotOwner(BasePermission):
     def has_object_permission(self, request, obj):
         if isinstance(obj, Profile):
@@ -82,22 +82,25 @@ class IsVisitor(BasePermission):
         status = user.account.status
 
         return status == STATUS_VISITOR
-    
+'''
+
 class IsSeller(BasePermission):
     def has_object_permission(self, request, view, obj):
         # obj is transaction
         return obj.bid.seller.user == request.user 
-
+'''
 class IsNotSeller(BasePermission):
     def has_object_permission(self, request, view, obj):
         # obj is item
         return obj.profile.account.user != request.user
+'''
 
 class IsBuyer(BasePermission):
     def has_object_permission(self, request, view, obj):
         # obj is transaction
         return obj.bid.buyer.user == request.user
-    
+
+'''
 class IsNotSuspended(BasePermission):
     def has_object_permission(self, request, view, obj):
         user = request.user
@@ -140,3 +143,4 @@ class IsSupabaseAuthenticated(permissions.BasePermission):
             return False
         except Exception:
             return False
+'''
