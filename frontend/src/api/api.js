@@ -32,35 +32,35 @@ const apiFetch = async (endpoint, method = "GET", body = null, token = null) => 
   // Get token from localStorage if not provided
   const authToken = token || localStorage.getItem('access_token');
 
-  // Debug log for token
-  console.log('Token being used:', authToken ? 'Present' : 'Missing');
+  // // Debug log for token
+  // console.log('Token being used:', authToken ? 'Present' : 'Missing');
 
   if (authToken) {
-    // Use token exactly as stored (already includes 'Bearer' prefix)
-    headers.Authorization = authToken;
-    console.log('Auth header being sent:', {
-      headerValue: headers.Authorization.substring(0, 20) + '...',
-      endpoint
-    });
+    // Remove any existing 'Bearer ' prefix before adding it
+    const cleanToken = authToken.replace('Bearer ', '');
+    // headers.Authorization = `Bearer ${cleanToken}`;
+    // Use a custom header instead
+    headers['X-Auth-Token'] = `Bearer ${cleanToken}`;
   }
   
-  try {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : null,
-      credentials: 'include',
-      mode: 'cors'  // Add this line
-    });
+  // Log headers safely
+  console.log('Sending request with headers:', headers);
 
-    // Debug unauthorized requests
-    if (response.status === 401) {
-      console.log('Unauthorized request:', {
-        endpoint,
-        token: authToken ? 'Present' : 'Missing',
-        headers: headers
-      });
-    }
+  const config = {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : null,
+    mode: 'cors',
+    credentials: 'include',
+  };
+
+  try {
+    const response = await fetch(`${BASE_URL}${endpoint}`, config);
+    // Log response safely
+    console.log('Response received:', {
+      status: response.status,
+      statusText: response.statusText
+    });
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
@@ -68,10 +68,7 @@ const apiFetch = async (endpoint, method = "GET", body = null, token = null) => 
 
     return response.json();
   } catch (error) {
-    if (error.message.includes('401')) {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-    }
+    console.error('API Call Error:', error);
     throw error;
   }
 };

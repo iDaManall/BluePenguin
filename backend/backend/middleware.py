@@ -7,6 +7,8 @@ from django.conf import settings
 from django.core.cache import cache
 from api.models import *
 
+User = get_user_model()  # Move this to the top level
+
 class SupabaseMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -17,29 +19,28 @@ class SupabaseMiddleware:
 
 class SupabaseAuthentication(BaseAuthentication):
     def authenticate(self, request):
-        # Check multiple possible header locations
-        auth_header = (
-            request.META.get('HTTP_AUTHORIZATION') or
-            request.META.get('Authorization') or
-            request.headers.get('Authorization')
+        # Check for custom header
+        auth_token = (
+            request.META.get('HTTP_X_AUTH_TOKEN') or
+            request.headers.get('X-Auth-Token')
         )
-        print("Debug header info:", {
-            'META.HTTP_AUTHORIZATION': request.META.get('HTTP_AUTHORIZATION'),
-            'META.Authorization': request.META.get('Authorization'),
-            'headers.Authorization': request.headers.get('Authorization'),
-            'all_headers': dict(request.headers),
-        })
-
-        if not auth_header or not auth_header.startswith('Bearer '):
-            print("Missing or invalid auth header format")  # Debug log
+        
+        if not auth_token:
             return None
         
-        token = auth_header.split(' ')[1] # extract the token from the header
-        print(f"Token extracted: {token[:20]}...")  # Debug log
+        # Remove 'Bearer ' prefix if present
+        if auth_token.startswith('Bearer '):
+            auth_token = auth_token.split(' ')[1]
+
+        print("Debug token info:", {
+            'token_present': bool(auth_token),
+            'token_preview': auth_token[:20] if auth_token else None
+        })
+
 
         try:
             # check if session exists in cache
-            session_key = f'supabase_session_{token}'
+            session_key = f'supabase_session_{auth_token}'
             cached_session = cache.get(session_key)
             print(f"Cached session found: {bool(cached_session)}")  # Debug log
 
@@ -58,22 +59,12 @@ class SupabaseAuthentication(BaseAuthentication):
 
 
             try:
-                auth_response = supabase.auth.get_user(token)
+                auth_response = supabase.auth.get_user(auth_token)
                 user_data = auth_response.user
                 print(f"User data retrieved: {user_data.email}")  # Debug log
             except Exception as e:
                 print(f"Error getting user data: {str(e)}")  # Debug log
                 raise AuthenticationFailed('Invalid token')
-
-            try:
-                session = supabase.auth.get_session(token)
-                if not session:
-                    print("No session found")  # Debug log
-                    raise AuthenticationFailed('Session Expired')
-                print("Session verified")  # Debug log
-            except Exception as e:
-                print(f"Session error: {str(e)}")  # Debug log
-                raise AuthenticationFailed('Session verification failed')
             
             User = get_user_model()
             # get or create Django user 
@@ -87,20 +78,18 @@ class SupabaseAuthentication(BaseAuthentication):
             print(f"Django user {'created' if user_created else 'retrieved'}")  # Debug log
 
 
-            if user_created:
-                try:
-                    account = Account.objects.get(user=django_user)
-                    Profile.objects.get(account=account)
-                except Exception as e:
-                    print(f"Account/Profile creation error: {str(e)}")  # Debug log
-                    django_user.delete()
-                    raise AuthenticationFailed('Failed to create account')
+            # if user_created:
+            #     try:
+            #         account = Account.objects.get(user=django_user)
+            #         Profile.objects.get(account=account)
+            #     except Exception as e:
+            #         print(f"Account/Profile creation error: {str(e)}")  # Debug log
+            #         django_user.delete()
+            #         raise AuthenticationFailed('Failed to create account')
 
-            # cache the session
+            # cache the session without verifying it
             session_data = {
                 'email': user_data.email,
-                'session_id':session.session.id,
-                'expires_at': session.session.expires_at
             }
             cache.set(
                 session_key,
@@ -111,8 +100,6 @@ class SupabaseAuthentication(BaseAuthentication):
 
             return (django_user, None)
             
-        except User.DoesNotExist:
-            raise AuthenticationFailed('User does not exist')
         except Exception as e:
             print(f"Authentication error: {str(e)}")  # Debug log
             try:
