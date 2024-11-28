@@ -25,21 +25,7 @@
   text-decoration: none;
 }
 
-.categories-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  color: #333;
-}
-
-.menu-icon {
-  font-size: 1.2rem;
-}
-
+/* Search Container */
 .search-container {
   flex: 1;
   max-width: 600px;
@@ -73,28 +59,14 @@
   height: 20px;
 }
 
+/* Navbar Right Section */
 .navbar-right {
   display: flex;
   align-items: center;
   gap: 2rem;
 }
 
-.nav-link {
-  color: #333;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.cart-icon {
-  display: flex;
-  align-items: center;
-}
-
-.cart-icon img {
-  width: 24px;
-  height: 24px;
-}
-
+/* Account Dropdown */
 .account-dropdown {
   position: relative;
 }
@@ -146,4 +118,94 @@
   height: 1px;
   background-color: #eee;
   margin: 0.5rem 0;
+}
+
+/* Cart Icon */
+.cart-icon {
+  display: flex;
+  align-items: center;
+}
+
+.cart-icon img {
+  width: 24px;
+  height: 24px;
+}
+
+
+/* Categories Dropdown */
+.categories-dropdown {
+  position: relative;
+}
+
+.categories-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #333;
+  transition: color 0.2s;
+}
+
+.categories-button:hover {
+  color: #3b82f6;
+}
+
+.menu-icon {
+  font-size: 1.2rem;
+}
+
+.categories-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  width: 250px;
+  z-index: 1000;
+  margin-top: 0.5rem;
+}
+
+.category-item {
+  color: #333;
+  text-decoration: none;
+  padding: 10px 15px;
+  transition: background-color 0.2s, color 0.2s;
+  border-radius: 4px;
+  text-transform: capitalize;
+  font-size: 0.95rem;
+}
+
+.category-item:hover {
+  background-color: #f5f5f5;
+  color: #3b82f6;
+}
+
+/* Link Styles */
+.nav-link {
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 1rem;
+  }
+
+  .search-container {
+    margin: 0 1rem;
+  }
+
+  .navbar-right {
+    gap: 1rem;
+  }
 }
