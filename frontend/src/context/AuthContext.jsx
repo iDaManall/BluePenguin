@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }) => {
       // Store the complete token with Bearer prefix
       const tokenWithBearer = `Bearer ${djangoResponse.access_token}`;
       localStorage.setItem('access_token', tokenWithBearer);
+      localStorage.setItem('token_timestamp', new Date().getTime().toString());
       localStorage.setItem('refresh_token', djangoResponse.refresh_token);
       localStorage.setItem('user_id', djangoResponse.user.id);
 
@@ -52,7 +53,7 @@ export const AuthProvider = ({ children }) => {
 
       return djangoResponse;
     } catch (error) {
-      console.error('Authentication error:', error);
+      console.error('Login error:', error);
       throw error;
     }
   };

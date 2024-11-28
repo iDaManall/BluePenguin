@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
@@ -20,6 +21,19 @@ function RegisterAndLogout() {
 }
 
 function App() {
+  useEffect(() => {
+    // Check if token exists and is expired
+    const TOKEN_EXPIRY_TIME = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+    const tokenTimestamp = localStorage.getItem('token_timestamp');
+    if (tokenTimestamp) {
+      const currentTime = new Date().getTime();
+      if (currentTime - parseInt(tokenTimestamp) > TOKEN_EXPIRY_TIME) {
+        localStorage.clear();
+        // Optionally redirect to login
+        window.location.href = '/login';
+      }
+    }
+  }, []);
 
   return (
     <AuthProvider>
