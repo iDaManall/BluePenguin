@@ -17,8 +17,18 @@ class SupabaseMiddleware:
 
 class SupabaseAuthentication(BaseAuthentication):
     def authenticate(self, request):
-        auth_header = request.META.get('HTTP_AUTHORIZATION')
-        print(f"Auth header received: {auth_header[:50] if auth_header else 'None'}")  # Debug log
+        # Check multiple possible header locations
+        auth_header = (
+            request.META.get('HTTP_AUTHORIZATION') or
+            request.META.get('Authorization') or
+            request.headers.get('Authorization')
+        )
+        print("Debug header info:", {
+            'META.HTTP_AUTHORIZATION': request.META.get('HTTP_AUTHORIZATION'),
+            'META.Authorization': request.META.get('Authorization'),
+            'headers.Authorization': request.headers.get('Authorization'),
+            'all_headers': dict(request.headers),
+        })
 
         if not auth_header or not auth_header.startswith('Bearer '):
             print("Missing or invalid auth header format")  # Debug log
