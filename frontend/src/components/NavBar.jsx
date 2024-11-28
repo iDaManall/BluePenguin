@@ -6,12 +6,34 @@ import './Navbar.css';
 
 const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const categoryRef = useRef(null);
+
+  // Categories data structure
+  const categories = [
+    "accessories",
+    "appliances",
+    "automotive",
+    "babies",
+    "fashion men",
+    "fashion women",
+    "gadgets",
+    "health and beauty",
+    "home and living",
+    "pets",
+    "school supplies",
+    "sports and lifestyle",
+    "toys and collectibles"
+  ];
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
+      }
+      if (categoryRef.current && !categoryRef.current.contains(event.target)) {
+        setIsCategoryOpen(false);
       }
     };
 
@@ -25,11 +47,31 @@ const Navbar = () => {
         <Link to="/" className="brand">
           BLUE PENGUIN
         </Link>
-        <button className="categories-button">
-          <span className="menu-icon">☰</span>
-          Categories
-        </button>
+        <div className="categories-dropdown" ref={categoryRef}>
+          <button 
+            className="categories-button"
+            onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+          >
+            <span className="menu-icon">☰</span>
+            Categories
+          </button>
+          {isCategoryOpen && (
+            <div className="categories-menu">
+              {categories.map((category) => (
+                <Link
+                  key={category}
+                  to={`/category/${category.toLowerCase().replace(/\s+/g, '-')}`}
+                  className="category-item"
+                  onClick={() => setIsCategoryOpen(false)}
+                >
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+      
 
       <div className="search-container">
         <input
