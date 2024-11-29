@@ -5,3 +5,5 @@ backend/astute-harmony-441702-v4-897ad6a174e7.json
 server-ca.pem
 client-cert.pem
 client-key.pem
+
+frontend/node_modules/

@@ -6,6 +6,8 @@ import NotFound from "./pages/NotFound";
 import Navbar from "./components/NavBar";
 import { AuthProvider } from './context/AuthContext';
 import AccountSettings from "./pages/Account/AccountSettings";
+import Profile from "./pages/Profile/Profile";
+import AddItem from './pages/Items/AddItem';
 import Filter from "./pages/Filter/Filter";
 import ItemPage from './pages/ItemPage/ItemPage';
 
@@ -36,6 +38,8 @@ function App() {
           <Route path = "/home" element = {<Home />} />
           <Route path = "*" element = {<NotFound />}></Route>
           <Route path="/account/settings" element={<AccountSettings />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/items/new" element={<AddItem />} />
           <Route path="/category/:category" element={<Filter />} />
           <Route path="/items/:id" element={<ItemPage />} />
         </Routes>

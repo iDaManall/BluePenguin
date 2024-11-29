@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { itemService } from '../../api/api';
 import SearchBar from '../../components/SearchBar';
-// import CategoryList from '../../components/CategoryList';
-// import FeaturedItems from '../../components/FeaturedItems';
 import ItemCard from '../../components/ItemCard/ItemCard';
 import './Home.css';
 
