@@ -19,7 +19,7 @@
 //     }
 // )
 
-import { AUTH_ENDPOINTS, ACCOUNT_ENDPOINTS, PROFILE_ENDPOINTS, ITEM_ENDPOINTS } from './endpoints';
+import { AUTH_ENDPOINTS, ACCOUNT_ENDPOINTS, PROFILE_ENDPOINTS, ITEM_ENDPOINTS, TRANSACTION_ENDPOINTS, EXPLORE_ENDPOINTS } from './endpoints';
 
 
 const BASE_URL = import.meta.env.VITE_API_URL; // Replace with your actual base URL
