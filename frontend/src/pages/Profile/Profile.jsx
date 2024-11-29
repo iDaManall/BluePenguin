@@ -29,8 +29,8 @@ const Profile = () => {
 
         // Fetch user's items
         // Use profile.user_id instead of profile.id
-      if (profile && profile.user_id) {
-        const userItems = await itemService.browseAvailableByProfile(profile.user_id, token);
+      if (profile && profile.id) {
+        const userItems = await itemService.browseAvailableByProfile(profile.id, token);
         setItems(userItems);
       } else {
         console.error('No user_id found in profile data:', profile);
