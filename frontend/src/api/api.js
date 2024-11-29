@@ -19,7 +19,7 @@
 //     }
 // )
 
-import { AUTH_ENDPOINTS, ACCOUNT_ENDPOINTS, PROFILE_ENDPOINTS, ITEM_ENDPOINTS } from './endpoints';
+import { AUTH_ENDPOINTS, ACCOUNT_ENDPOINTS, PROFILE_ENDPOINTS, ITEM_ENDPOINTS, TRANSACTION_ENDPOINTS, EXPLORE_ENDPOINTS } from './endpoints';
 import { supabase } from '../utils/client';
 
 const BASE_URL = import.meta.env.VITE_API_URL; // Replace with your actual base URL
@@ -126,11 +126,11 @@ export const itemService = {
 
   // Browse available items by profile
   browseAvailableByProfile: (profileId, token) => 
-    apiFetch(`${ITEM_ENDPOINTS.SEARCH}?profile__account_id=${profileId}&ordering=-date_posted&availability=available`, 'GET', null, token),
+    apiFetch(`${ITEM_ENDPOINTS.SEARCH}?profile__id=${profileId}&ordering=-date_posted&availability=available`, 'GET', null, token),
 
   // Browse unavailable items by profile
   browseUnavailableByProfile: (profileId, token) => 
-    apiFetch(`${ITEM_ENDPOINTS.SEARCH}?profile__account_id=${profileId}&ordering=-date_posted&availability=sold`, 'GET', null, token),
+    apiFetch(`${ITEM_ENDPOINTS.SEARCH}?profile__id=${profileId}&ordering=-date_posted&availability=sold`, 'GET', null, token),
 
   // Browse items by collection and bid range
   browseByCollectionAndBidRange: (title, minBid, maxBid, token) => 

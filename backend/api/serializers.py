@@ -35,7 +35,7 @@ class NoteSerializer(serializers.ModelSerializer):
 class CardDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CardDetails
-        fields = ["card_number", "card_holder_name", "expire_month", "expire_year", "cvv"]
+        fields = ["id", "card_number", "card_holder_name", "expire_month", "expire_year", "cvv"]
     
     def create(self, validated_data):
         return CardDetails.objects.create(**validated_data)
@@ -54,7 +54,7 @@ class CardDetailsSerializer(serializers.ModelSerializer):
 class PayPalDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = PayPalDetails
-        fields = ["paypal_email"]
+        fields = ["id", "paypal_email"]
     
     def create(self, validated_data):
         return PayPalDetails.objects.create(**validated_data)
@@ -72,7 +72,7 @@ class PayPalDetailsSerializer(serializers.ModelSerializer):
 class ShippingAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShippingAddress
-        fields = ["street_address", "city", "state", "province_territory", "zip", "country"]
+        fields = ["id", "street_address", "city", "state", "province_territory", "zip", "country"]
     
     def create(self, validated_data):
         return ShippingAddress.objects.create(**validated_data)
@@ -163,7 +163,7 @@ class AccountSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Account
-        fields = ["first_name", "last_name", "username", "status", "email", "balance", "password"]
+        fields = ["id", "first_name", "last_name", "username", "status", "email", "balance", "password"]
         extra_kwargs = {
             "status": {"read_only":True}, 
             "balance": {"read_only": True}, 
@@ -203,7 +203,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ['display_name', 'display_icon', 'description', 'average_rating', 'username', 'slug']
+        fields = ['id', 'display_name', 'display_icon', 'description', 'average_rating', 'username', 'slug']
         extra_kwargs = {
             "average_rating": {"read_only": True},
             "username": {"read_only": True}
@@ -259,7 +259,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Item
-        fields = ['title', 'username', 'display_icon', 'description', 'deadline', 'collection', 'image_urls', 'selling_price', 'profile', 'maximum_bid', 'minimum_bid']
+        fields = ['id', 'title', 'username', 'display_icon', 'description', 'deadline', 'collection', 'image_urls', 'selling_price', 'profile', 'maximum_bid', 'minimum_bid']
         extra_kwargs = {
             "username": {"read_only": True},
             "display_icon": {"read_only": True}
@@ -352,7 +352,7 @@ class SaveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Save
-        fields = ['item', 'profile', 'time_saved', 'image_urls', 'title', 'current_bid']
+        fields = ['id', 'item', 'profile', 'time_saved', 'image_urls', 'title', 'current_bid']
         extra_kwargs = {
             "item": {"read_only": True},
             "profile": {"read_only": True},
@@ -377,7 +377,7 @@ class SaveSerializer(serializers.ModelSerializer):
 class ReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Report
-        fields = ['reporter', 'reportee', 'report']
+        fields = ['id', 'reporter', 'reportee', 'report']
         extra_kwargs = {
             "reporter": {"read_only": True},
             "reportee": {"read_only": True},
@@ -396,7 +396,7 @@ class ReportSerializer(serializers.ModelSerializer):
 class LikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Like
-        fields = ['profile', 'comment']
+        fields = ['id', 'profile', 'comment']
         extra_kwargs = {
             'profile': {'read_only': True},
             'comment': {'read_only': True},
@@ -417,7 +417,7 @@ class LikeSerializer(serializers.ModelSerializer):
 class DislikeSerializer(serializers.ModelSerializer):
     class Meta: 
         model = Dislike
-        fields = ['profile', 'comment']
+        fields = ['id', 'profile', 'comment']
         extra_kwargs = {
             'profile': {'read_only': True},
             'comment': {'read_only': True},
@@ -474,7 +474,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 class ParcelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Parcel
-        fields = ['item', 'length', 'width', 'height', 'weight', 'distance_unit', 'weight_unit']
+        fields = ['id', 'item', 'length', 'width', 'height', 'weight', 'distance_unit', 'weight_unit']
         extra_kwargs = {
             "item": {"read_only": True}
         }
@@ -491,7 +491,7 @@ class QuitRequestSerializer(serializers.ModelSerializer):
     email = serializers.CharField(source='account.user.email', read_only=True)
     class Meta:
         model = QuitRequest
-        fields = ['username', 'email', 'reason', 'status']
+        fields = ['id', 'username', 'email', 'reason', 'status']
         extra_kwargs = {
             "username": {"read_only": True},
             "email": {"read_only": True},
