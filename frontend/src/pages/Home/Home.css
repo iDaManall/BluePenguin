@@ -60,14 +60,15 @@
 
 .loading {
   text-align: center;
-  padding: 20px;
+  padding: 2rem;
+  font-size: 1.2rem;
   color: #666;
 }
 
 .error {
   text-align: center;
-  padding: 20px;
-  color: #ef4444;
+  padding: 2rem;
+  color: #e53e3e;
 }
 .categories-grid {
   display: grid;
@@ -90,4 +91,11 @@
 .category-card:hover {
   transform: translateY(-2px);
   color: #3b82f6;
+}
+
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 2rem;
+  padding: 2rem;
 }

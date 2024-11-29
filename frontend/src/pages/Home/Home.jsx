@@ -4,6 +4,7 @@ import { itemService } from '../../api/api';
 import SearchBar from '../../components/SearchBar';
 // import CategoryList from '../../components/CategoryList';
 // import FeaturedItems from '../../components/FeaturedItems';
+import ItemCard from '../../components/ItemCard/ItemCard';
 import './Home.css';
 
 const Home = () => {
@@ -14,13 +15,13 @@ const Home = () => {
   useEffect(() => {
     const fetchFeaturedItems = async () => {
       try {
-        // Fetch items with highest bids
+        setLoading(true);
         const response = await itemService.searchItems({
           ordering: '-total_bids',
           availability: 'available',
           limit: 6
         });
-        setFeaturedItems(response.results);
+        setFeaturedItems(response?.results || []);
       } catch (err) {
         setError('Failed to load featured items');
         console.error(err);
@@ -49,7 +50,17 @@ const Home = () => {
         <h2>Featured Items</h2>
         {loading && <div className="loading">Loading...</div>}
         {error && <div className="error">{error}</div>}
-        {/* {!loading && !error && <FeaturedItems items={featuredItems} />} */}
+        {!loading && !error && (
+          <div className="items-grid">
+            {featuredItems.length > 0 ? (
+              featuredItems.map(item => (
+                <ItemCard key={item.id} item={item} />
+              ))
+            ) : (
+              <p>No items found</p>
+            )}
+          </div>
+        )}
       </section>
 
       <section className="cta-section">
