@@ -172,7 +172,8 @@ class AccountSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         # extract the data from User model
-        password = validated_data.pop("password", None)
+        user_data = validated_data.pop('user', {})
+        password = user_data.pop("password", None)
         # update password separately since it's hashed
         user = instance.user # here, user is the instance of the User model
         if password:
@@ -180,8 +181,8 @@ class AccountSerializer(serializers.ModelSerializer):
 
         # update account settings
         for attr in ['first_name', 'last_name', 'username', 'email']:
-            if attr in validated_data:
-                setattr(instance.user, attr, validated_data['user'][attr])
+            if attr in user_data:
+                setattr(instance.user, attr, user_data[attr])
         
         # save everything
         user.save()
