@@ -3,12 +3,22 @@ import { Link } from 'react-router-dom';
 import Login from '../pages/Auth/Login';
 import Register from '../pages/Auth/Register';
 import './Navbar.css';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const dropdownRef = useRef(null);
   const categoryRef = useRef(null);
+  const { user } = useAuth();
+
+  // console logs if debugging needed
+  // console.log('Current user:', user);
+  // console.log('User status:', user?.status);
+  // console.log('Should show apply button:', user && user.status === 'V');
+
+  // Check if user is a visitor
+  const isVisitor = user?.status === 'V';
 
   // Categories data structure
   const categories = [
@@ -98,7 +108,17 @@ const Navbar = () => {
                 <Link to="/profile">Profile</Link>
                 <Link to="/account/settings">Account Setting</Link>
                 <Link to="/payments">Payments / Address</Link>
-                <Link to="/apply">Apply to Be a User</Link>
+
+                {/* Only show Apply User button if user is logged in and is a visitor */}
+                {user && isVisitor && (
+                  <Link 
+                    to="/apply-user"
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  >
+                    Apply to be User
+                  </Link>
+                )}
+
                 <Link to="/requests">Requests</Link>
               </div>
               <div className="dropdown-divider"></div>

@@ -10,6 +10,7 @@ import Profile from "./pages/Profile/Profile";
 import AddItem from './pages/Items/AddItem';
 import Filter from "./pages/Filter/Filter";
 import ItemPage from './pages/ItemPage/ItemPage';
+import ApplyUser from "./pages/Auth/ApplyUser";
 
 // clear refresh and access token when we log out, navigate to login page
 function Logout(){
@@ -42,6 +43,7 @@ function App() {
           <Route path="/items/new" element={<AddItem />} />
           <Route path="/category/:category" element={<Filter />} />
           <Route path="/items/:id" element={<ItemPage />} />
+          <Route path="/apply-user" element={<ApplyUser />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

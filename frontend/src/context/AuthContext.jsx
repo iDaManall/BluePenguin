@@ -48,7 +48,8 @@ export const AuthProvider = ({ children }) => {
 
       setUser({
         ...djangoResponse.user,
-        access_token: tokenWithBearer
+        access_token: tokenWithBearer,
+        status: djangoResponse.user.status // Ensure this is included
       });
 
       return djangoResponse;
