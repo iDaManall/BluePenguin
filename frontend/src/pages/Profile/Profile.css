@@ -1,6 +1,6 @@
 .profile-container {
     max-width: 1200px;
-    margin: 0 auto;
+    margin: 60px auto 0; /* Added top margin to account for navbar */
     padding: 20px;
   }
   
@@ -9,7 +9,11 @@
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 30px;
-  }
+    background-color: white;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
   
   .profile-info {
     display: flex;
@@ -99,3 +103,38 @@
     background-color: #f8d7da;
     border-radius: 4px;
   }
+
+  .apply-user-btn {
+    padding: 12px 24px;
+    background-color: #E74C3C;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    display: inline-block;
+}
+
+.apply-user-btn:hover {
+    background-color: #D44235;
+}
+
+/* Adjust profile info for visitor view */
+.profile-info {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+}
+
+.profile-details h2 {
+    font-size: 24px;
+    margin: 0 0 12px 0;
+    font-family: 'Times New Roman', serif;
+}
+
+.profile-details p {
+    margin: 8px 0;
+    color: #666;
+}
