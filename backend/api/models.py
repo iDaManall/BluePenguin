@@ -178,6 +178,7 @@ class Item(models.Model):
     winning_bid = models.OneToOneField('Bid', null=True, on_delete=models.SET_NULL, related_name='winning_item', default=None)
     minimum_bid = models.DecimalField(max_digits=10, decimal_places=2,help_text="Minimum bid amount allowed", default=1.00)
     maximum_bid = models.DecimalField(max_digits=10, decimal_places=2,help_text="Maximum bid amount allowed", default=1000000.00)
+    
     def save(self, *args, **kwargs):
         if self.highest_bid is None:
             self.highest_bid = self.selling_price
