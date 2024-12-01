@@ -44,9 +44,12 @@ const apiFetch = async (endpoint, method = "GET", body = null, token = null) => 
     throw new Error('Session expired');
   }
 
-  const headers = {
-    "Content-Type": "application/json",
-  };
+  const headers = {};
+
+  // Only set Content-Type if we're not sending FormData
+  if (!(body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
   
   // Get token from localStorage if not provided
   const authToken = token || localStorage.getItem('access_token');
@@ -68,7 +71,8 @@ const apiFetch = async (endpoint, method = "GET", body = null, token = null) => 
   const config = {
     method,
     headers,
-    body: body ? JSON.stringify(body) : null,
+    // Only stringify if not FormData
+    body: body instanceof FormData ? body : (body ? JSON.stringify(body) : null),
     mode: 'cors',
     credentials: 'include',
   };
@@ -132,8 +136,8 @@ export const accountService = {
 
 export const profileService = {
   getProfile: (pk, token) => apiFetch(PROFILE_ENDPOINTS.VIEW(pk), 'GET', null, token),
-  editProfile: (pk, profileData, token) => 
-    apiFetch(PROFILE_ENDPOINTS.EDIT(pk), 'PUT', profileData, token),
+  editProfile: (profileData, token) => 
+    apiFetch(PROFILE_ENDPOINTS.EDIT, 'PATCH', profileData, token),
   rateProfile: (pk, ratingData, token) => 
     apiFetch(PROFILE_ENDPOINTS.RATE(pk), 'POST', ratingData, token),
   reportUser: (pk, reportData, token) => 

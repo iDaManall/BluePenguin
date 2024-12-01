@@ -25,10 +25,11 @@ const Profile = () => {
         // Fetch profile data
         const profile = await profileService.viewOwnProfile(token);
         console.log('Profile data:', profile); // Add this line to debug
+        console.log('User from auth context:', user);
+        console.log('User status:', user?.status);
         setProfileData(profile);
 
         // Fetch user's items
-        // Use profile.user_id instead of profile.id
       if (profile && profile.id) {
         const userItems = await itemService.browseAvailableByProfile(profile.id, token);
         setItems(userItems);
@@ -46,7 +47,7 @@ const Profile = () => {
     };
 
     fetchProfileData();
-  }, [navigate]);
+  }, [navigate, user]);
 
   const handleDeleteItem = async (itemId) => {
     try {
@@ -61,7 +62,7 @@ const Profile = () => {
   };
 
   const handleEditProfile = () => {
-    navigate('/account/settings');
+    navigate('/profile/edit');
   };
 
   const handleAddItem = () => {
@@ -72,6 +73,13 @@ const Profile = () => {
   if (error) return <div className="error-message">{error}</div>;
   if (!profileData) return <div>No profile data found</div>;
 
+  // Check status from user object instead of profileData
+  const isVisitor = user?.status === 'V';
+  console.log('Is visitor check:', {
+    userStatus: user?.status,
+    isVisitor: isVisitor
+  });
+
   return (
     <div className="profile-container">
       <div className="profile-header">
@@ -81,60 +89,69 @@ const Profile = () => {
           </div>
           <div className="profile-details">
             <h2>{profileData.username}</h2>
-            <p>{`${profileData.first_name} ${profileData.last_name}`}</p>
+            <p>{profileData.display_name}</p>
             <p>Status: {profileData.status}</p>
-            <p>Rating: {profileData.rating}</p>
+            {!isVisitor && <p>Rating: {profileData.average_rating}</p>}
             <p>{profileData.description}</p>
           </div>
         </div>
-        {checkPermissions.canUpdateSettings(user) && (
-          <button 
-            className="edit-profile-btn"
-            onClick={handleEditProfile}
+        {isVisitor ? (
+          <Link 
+            to="/apply-user"
+            className="apply-user-btn"
           >
-            Edit Profile
-          </button>
+            Apply to be User
+          </Link>
+        ) : (
+          checkPermissions.canUpdateSettings(user) && (
+            <button 
+              className="edit-profile-btn"
+              onClick={handleEditProfile}
+            >
+              Edit Profile
+            </button>
+          )
         )}
       </div>
 
-      <div className="product-listings">
-        <div className="listings-header">
-          <h3>Product Listings ({items.length})</h3>
-          {checkPermissions.canUpdateSettings(user) && (
-            <button 
-              className="add-item-btn"
-              onClick={handleAddItem}
-            >
-              + Add Item
-            </button>
-          )}
-        </div>
-
-        <div className="items-grid">
-          {items.map(item => (
-            <div key={item.id} className="item-card">
-              <img src={item.image_url} alt={item.title} />
-              <div className="item-info">
-                <h4>{item.title}</h4>
-                <p>{item.description}</p>
-                {checkPermissions.canDeleteItem(user, item) && (
-                  <button 
-                    className="delete-item-btn"
-                    onClick={() => handleDeleteItem(item.id)}
-                  >
-                    X
-                  </button>
-                )}
-              </div>
+      {/* Only show product listings and reviews for non-visitors */}
+      {!isVisitor && (
+        <>
+          <div className="product-listings">
+            <div className="listings-header">
+              <h3>Product Listings ({items.length})</h3>
+              {checkPermissions.canUpdateSettings(user) && (
+                <button 
+                  className="add-item-btn"
+                  onClick={handleAddItem}
+                >
+                  + Add Item
+                </button>
+              )}
             </div>
-          ))}
-        </div>
-      </div>
 
-      <div className="reviews-section">
-        <h3>Reviews</h3>
-        {/* Add reviews component here */}
-      </div>
+            <div className="items-grid">
+              {items.map(item => (
+                <div key={item.id} className="item-card">
+                  <img src={item.image_url} alt={item.title} />
+                  <div className="item-info">
+                    <h4>{item.title}</h4>
+                    <p>{item.description}</p>
+                    {checkPermissions.canDeleteItem(user, item) && (
+                      <button 
+                        className="delete-item-btn"
+                        onClick={() => handleDeleteItem(item.id)}
+                      >
+                        X
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

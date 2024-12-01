@@ -6,6 +6,12 @@ export const checkPermissions = {
     isNotVisitor: (user) => user?.status !== 'VISITOR',
     isNotSuspended: (user) => !user?.is_suspended,
     
+    canApplyToBeUser: (user) => (
+        !!user && 
+        user.status === 'VISITOR' && 
+        !user.is_suspended
+      ),
+      
     // Item Actions
     canBid: (user, item) => (
         !!user && // Must be authenticated

@@ -172,7 +172,8 @@ class AccountSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         # extract the data from User model
-        password = validated_data.pop("password", None)
+        user_data = validated_data.pop('user', {})
+        password = user_data.pop("password", None)
         # update password separately since it's hashed
         user = instance.user # here, user is the instance of the User model
         if password:
@@ -180,8 +181,8 @@ class AccountSerializer(serializers.ModelSerializer):
 
         # update account settings
         for attr in ['first_name', 'last_name', 'username', 'email']:
-            if attr in validated_data:
-                setattr(instance.user, attr, validated_data['user'][attr])
+            if attr in user_data:
+                setattr(instance.user, attr, user_data[attr])
         
         # save everything
         user.save()
@@ -200,13 +201,15 @@ class ProfileSerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(source="account.user.username", read_only=True)
     display_icon = serializers.ImageField(required=False)
     average_rating = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
-        fields = ['id', 'display_name', 'display_icon', 'description', 'average_rating', 'username', 'slug']
+        fields = ['id', 'display_name', 'display_icon', 'description', 'average_rating', 'username', 'slug', 'status']
         extra_kwargs = {
             "average_rating": {"read_only": True},
-            "username": {"read_only": True}
+            "username": {"read_only": True},
+            "status": {"read_only": True},
         }
     
     # you can edit display name, display icon, and description
@@ -232,6 +235,14 @@ class ProfileSerializer(serializers.ModelSerializer):
     
     def get_average_rating(self, obj):
         return obj.average_rating
+    
+    def get_status(self, obj):
+        if obj.account.status == STATUS_USER:
+            return 'USER'
+        elif obj.account.status == STATUS_VIP:
+            return 'VIP'
+        elif obj.account.status == STATUS_VISITOR:
+            return 'VISITOR'
 
 
 class RatingSerializer(serializers.ModelSerializer):

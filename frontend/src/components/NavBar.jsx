@@ -5,15 +5,13 @@ import Register from '../pages/Auth/Register';
 import './Navbar.css';
 import { useAuth } from '../context/AuthContext';
 
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const dropdownRef = useRef(null);
   const categoryRef = useRef(null);
-  const { user } = useAuth();
-
-  const isVisitor = user?.status === 'V';
 
   // Categories data structure
   const categories = [

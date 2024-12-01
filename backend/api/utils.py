@@ -267,13 +267,23 @@ class EmailNotifications:
         message = "Your application to become a User has been rejected by BluePenguin administration."
         user.email_user(subject=subject, message=message)
 
-def upload_to_gcs(file, destination_blob_name):
+def upload_to_gcs(file_obj, destination_blob_name):
+    print(f"Starting upload for {destination_blob_name}")
     client = storage.Client.from_service_account_json(settings.GOOGLE_APPLICATION_CREDENTIALS)
     bucket = client.bucket(settings.GOOGLE_CLOUD_STORAGE_BUCKET)
     blob = bucket.blob(destination_blob_name)
-    blob.upload_from_file(file)
-    blob.make_public()
-    return blob.public_url 
+
+    # Upload the file
+    file_obj.seek(0) # Reset file pointer to beginning
+    blob.upload_from_file(file_obj) 
+    print(f"File uploaded successfully")
+    # blob.make_public()
+
+    # Instead of using ACL, make the object publicly readable through uniform bucket-level access
+    # Get the public URL
+    url = blob.public_url
+    print(f"Generated public URL: {url}")
+    return url
 
 def generate_random_arithmetic_question():
     operations = [

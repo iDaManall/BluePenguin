@@ -598,6 +598,8 @@ class SignInView(APIView):
             try:
                 # Verify the user exists in Django first
                 user = User.objects.get(email=email)
+                # Get the associated account to access the status
+                account = Account.objects.get(user=user)
             except User.DoesNotExist:
                 print(f"User with email {email} not found in Django")
                 return Response(
@@ -640,6 +642,7 @@ class SignInView(APIView):
                 'username': user.username,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
+                'status': account.status,  # Add the status from the account
             }
 
             response = Response(
