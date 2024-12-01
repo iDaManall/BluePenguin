@@ -1,0 +1,126 @@
+.edit-profile-container {
+    max-width: 1200px;
+    margin: 60px auto 0;
+    padding: 20px;
+  }
+  
+  .edit-profile-content {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+  }
+  
+  .profile-image-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px;
+  }
+  
+  .profile-image-container {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-bottom: 20px;
+    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .profile-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .placeholder-text {
+    color: #666;
+    font-size: 14px;
+  }
+  
+  .change-picture-btn {
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .edit-profile-form {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .form-group {
+    margin-bottom: 24px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 16px;
+    color: #333;
+  }
+  
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    background-color: #f8f8f8;
+  }
+  
+  .form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+  
+  .form-group input:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    background-color: white;
+  }
+  
+  .error-message {
+    color: #dc3545;
+    margin-bottom: 16px;
+    padding: 8px;
+    background-color: #f8d7da;
+    border-radius: 4px;
+  }
+  
+  .save-changes-btn {
+    width: 100%;
+    padding: 14px;
+    background-color: #E74C3C;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .save-changes-btn:hover {
+    background-color: #D44235;
+  }
+  
+  @media (max-width: 768px) {
+    .edit-profile-content {
+      padding: 20px;
+    }
+    
+    .profile-image-container {
+      width: 120px;
+      height: 120px;
+    }
+  }

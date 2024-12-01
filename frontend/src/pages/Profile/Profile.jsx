@@ -30,7 +30,6 @@ const Profile = () => {
         setProfileData(profile);
 
         // Fetch user's items
-        // Use profile.user_id instead of profile.id
       if (profile && profile.id) {
         const userItems = await itemService.browseAvailableByProfile(profile.id, token);
         setItems(userItems);
@@ -63,7 +62,7 @@ const Profile = () => {
   };
 
   const handleEditProfile = () => {
-    navigate('/account/settings');
+    navigate('/profile/edit');
   };
 
   const handleAddItem = () => {
@@ -90,9 +89,9 @@ const Profile = () => {
           </div>
           <div className="profile-details">
             <h2>{profileData.username}</h2>
-            <p>{`${profileData.first_name} ${profileData.last_name}`}</p>
+            <p>{profileData.display_name}</p>
             <p>Status: {profileData.status}</p>
-            {!isVisitor && <p>Rating: {profileData.rating}</p>}
+            {!isVisitor && <p>Rating: {profileData.average_rating}</p>}
             <p>{profileData.description}</p>
           </div>
         </div>
@@ -150,11 +149,6 @@ const Profile = () => {
                 </div>
               ))}
             </div>
-          </div>
-
-          <div className="reviews-section">
-            <h3>Reviews</h3>
-            {/* Add reviews component here */}
           </div>
         </>
       )}

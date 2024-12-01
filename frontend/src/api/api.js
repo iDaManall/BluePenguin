@@ -132,8 +132,8 @@ export const accountService = {
 
 export const profileService = {
   getProfile: (pk, token) => apiFetch(PROFILE_ENDPOINTS.VIEW(pk), 'GET', null, token),
-  editProfile: (pk, profileData, token) => 
-    apiFetch(PROFILE_ENDPOINTS.EDIT(pk), 'PUT', profileData, token),
+  editProfile: (profileData, token) => 
+    apiFetch(PROFILE_ENDPOINTS.EDIT, 'PUT', profileData, token),
   rateProfile: (pk, ratingData, token) => 
     apiFetch(PROFILE_ENDPOINTS.RATE(pk), 'POST', ratingData, token),
   reportUser: (pk, reportData, token) => 
