@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { itemService } from '../../api/api.js';
 import './Filter.css';
-import { Link } from 'react-router-dom';
 import ItemCard from '../../components/ItemCard/ItemCard';
 
 const Filter = () => {
