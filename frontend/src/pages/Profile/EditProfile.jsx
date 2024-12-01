@@ -4,10 +4,11 @@ import { profileService } from '../../api/api';
 import './EditProfile.css';
 
 const EditProfile = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     display_name: '',
     description: '',
-    profile_image: null
+    display_icon: null
   });
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState(null);
@@ -20,6 +21,24 @@ const EditProfile = () => {
         navigate('/login');
       }
     };
+
+    const fetchProfile = async () => {
+        try {
+        const profile = await profileService.viewOwnProfile();
+        setFormData({
+            display_name: profile.display_name || '',
+            description: profile.description || '',
+        });
+        if (profile.display_icon) {
+            setImagePreview(profile.display_icon);
+        }
+        } catch (err) {
+        setError('Failed to load profile data');
+        console.error(err);
+        }
+    };
+    
+    fetchProfile();
     checkAuth();
   }, [navigate]);
 
@@ -33,11 +52,21 @@ const EditProfile = () => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
+    // Check file size (e.g., 5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+        setError('File size must be less than 5MB');
+        return;
+    }
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+        setError('File must be an image');
+        return;
+    }
     if (file) {
       setFormData(prev => ({
         ...prev,
-        profile_image: file
-      }));
+        display_icon: file
+    }));
       
       // Create preview URL
       const reader = new FileReader();
@@ -50,6 +79,8 @@ const EditProfile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError(null); // Reset error state
     try {
       const token = localStorage.getItem('access_token');
       
@@ -57,15 +88,20 @@ const EditProfile = () => {
       const submitData = new FormData();
       submitData.append('display_name', formData.display_name);
       submitData.append('description', formData.description);
-      if (formData.profile_image) {
-        submitData.append('profile_image', formData.profile_image);
+      if (formData.display_icon) {
+        submitData.append('display_icon', formData.display_icon);
       }
 
       await profileService.editProfile(submitData, token);
-      navigate('/profile'); // Navigate back to profile page
+      // Add a small delay before navigation to ensure the update is processed
+      setTimeout(() => {
+        navigate('/profile');
+      }, 500);
     } catch (err) {
-      setError('Failed to update profile');
-      console.error(err);
+        setError('Failed to update profile: ' + (err.message || 'Unknown error'));
+        console.error('Profile update error:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -121,7 +157,7 @@ const EditProfile = () => {
           {error && <div className="error-message">{error}</div>}
 
           <div className="form-actions">
-            <button type="submit" className="save-changes-btn">
+            <button type="submit" className="save-changes-btn" disabled={isLoading}>
               Save Changes
             </button>
           </div>
