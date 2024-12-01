@@ -201,13 +201,15 @@ class ProfileSerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(source="account.user.username", read_only=True)
     display_icon = serializers.ImageField(required=False)
     average_rating = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
-        fields = ['id', 'display_name', 'display_icon', 'description', 'average_rating', 'username', 'slug']
+        fields = ['id', 'display_name', 'display_icon', 'description', 'average_rating', 'username', 'slug', 'status']
         extra_kwargs = {
             "average_rating": {"read_only": True},
-            "username": {"read_only": True}
+            "username": {"read_only": True},
+            "status": {"read_only": True},
         }
     
     # you can edit display name, display icon, and description
@@ -233,6 +235,14 @@ class ProfileSerializer(serializers.ModelSerializer):
     
     def get_average_rating(self, obj):
         return obj.average_rating
+    
+    def get_status(self, obj):
+        if obj.account.status == STATUS_USER:
+            return 'USER'
+        elif obj.account.status == STATUS_VIP:
+            return 'VIP'
+        elif obj.account.status == STATUS_VISITOR:
+            return 'VISITOR'
 
 
 class RatingSerializer(serializers.ModelSerializer):
