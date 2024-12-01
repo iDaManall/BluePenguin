@@ -36,17 +36,34 @@ const AddItem = () => {
         return;
       }
 
-      // Convert starting_bid to number
-      const formattedData = {
-        ...itemData,
-        starting_bid: parseFloat(itemData.starting_bid),
-      };
+      const bidAmount = parseFloat(itemData.starting_bid);
 
-      await itemService.postItem(formattedData, token);
+      // Format data to match backend expectations
+    const formattedData = {
+      title: itemData.title,
+      description: itemData.description,
+      selling_price: bidAmount, // Changed from starting_bid
+      deadline: new Date(itemData.deadline).toISOString(),
+      collection: itemData.category,
+      maximum_bid: bidAmount * 2, // Set a reasonable maximum bid
+      minimum_bid: bidAmount, // Set minimum bid same as selling price
+      image_url: itemData.image_url
+    };
+
+      console.log('Submitting data:', formattedData); // Debug log
+
+      const response = await itemService.postItem(formattedData, token);
+      console.log('Response:', response); // Debug log
+
       navigate('/profile'); // Redirect to profile after successful submission
     } catch (err) {
-      console.error('Error posting item:', err);
-      setError('Failed to post item. Please try again.');
+      // More detailed error logging
+    console.error('Error details:', {
+      message: err.message,
+      response: err.response,
+      data: err.response?.data
+    });
+      setError(err.message || 'Failed to post item. Please try again.');
     } finally {
       setLoading(false);
     }

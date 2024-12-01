@@ -78,6 +78,16 @@ const apiFetch = async (endpoint, method = "GET", body = null, token = null) => 
   };
 
   try {
+    // Log the exact request being made
+    console.log('Making request to:', `${BASE_URL}${endpoint}`);
+    console.log('With config:', {
+      method,
+      headers,
+      body: body instanceof FormData 
+        ? Object.fromEntries(body.entries())
+        : body
+    });
+
     const response = await fetch(`${BASE_URL}${endpoint}`, config);
     // Log response safely
     console.log('Response received:', {
@@ -151,8 +161,25 @@ export const profileService = {
 };
 
 export const itemService = {
-  postItem: (itemData, token) => 
-    apiFetch(ITEM_ENDPOINTS.POST, 'POST', itemData, token),
+  postItem: async (itemData, token) => {
+    try {
+      // Convert the data to match what the backend expects
+      const requestData = {
+        ...itemData,
+        // Ensure numeric fields are numbers
+        selling_price: parseFloat(itemData.selling_price),
+        maximum_bid: parseFloat(itemData.maximum_bid),
+        minimum_bid: parseFloat(itemData.minimum_bid),
+        // Ensure deadline is properly formatted
+        deadline: new Date(itemData.deadline).toISOString(),
+      };
+  
+      return await apiFetch(ITEM_ENDPOINTS.POST, 'POST', requestData, token);
+    } catch (error) {
+      console.error('Error in postItem:', error);
+      throw error;
+    }
+  },
 
   getItem: async (id) => {
     try {
