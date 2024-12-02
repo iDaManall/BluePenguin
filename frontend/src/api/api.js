@@ -163,17 +163,25 @@ export const profileService = {
 export const itemService = {
   postItem: async (itemData, token) => {
     try {
+      // Get the profile ID from the API first
+      const profileResponse = await apiFetch('/api/profiles/me/', 'GET', null, token);
       // Convert the data to match what the backend expects
       const requestData = {
-        ...itemData,
-        // Ensure numeric fields are numbers
+        title: itemData.title,
+        description: itemData.description,
         selling_price: parseFloat(itemData.selling_price),
         maximum_bid: parseFloat(itemData.maximum_bid),
         minimum_bid: parseFloat(itemData.minimum_bid),
-        // Ensure deadline is properly formatted
         deadline: new Date(itemData.deadline).toISOString(),
+        collection: itemData.collection,
+        profile: profileResponse.id,
+        // Only include image_urls, not image_url
+        image_urls: [itemData.image_url]
       };
   
+      // Log the exact data being sent
+      console.log('Sending item data:', JSON.stringify(requestData, null, 2));
+
       return await apiFetch(ITEM_ENDPOINTS.POST, 'POST', requestData, token);
     } catch (error) {
       console.error('Error in postItem:', error);
