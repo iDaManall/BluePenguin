@@ -5,20 +5,13 @@ import Register from '../pages/Auth/Register';
 import './Navbar.css';
 import { useAuth } from '../context/AuthContext';
 
+import { useAuth } from '../context/AuthContext';
+
 const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const dropdownRef = useRef(null);
   const categoryRef = useRef(null);
-  const { user } = useAuth();
-
-  // console logs if debugging needed
-  // console.log('Current user:', user);
-  // console.log('User status:', user?.status);
-  // console.log('Should show apply button:', user && user.status === 'V');
-
-  // Check if user is a visitor
-  const isVisitor = user?.status === 'V';
 
   // Categories data structure
   const categories = [
@@ -125,7 +118,7 @@ const Navbar = () => {
               <div className="dropdown-section">
                 <Link to="/orders/pending">Pending</Link>
                 <Link to="/orders/saved">Saved</Link>
-                <Link to="/orders/canceled">Canceled/processed</Link>
+                <Link to="/orders/Awaiting Arrival">Awaiting Arrival</Link>
                 <Link to="/orders/shipped">Shipped</Link>
               </div>
             </div>
