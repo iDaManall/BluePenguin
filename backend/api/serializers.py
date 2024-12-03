@@ -226,7 +226,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         # uploading display icon
         if 'display_icon' in validated_data:
             display_icon = validated_data['display_icon']
-            destination_blob_name = f"profile-pics/{instance.account.user.username}/{display_icon.name}"
+            destination_blob_name = f"profile_pics/{instance.account.user.username}/{display_icon.name}"
             url = upload_to_gcs(display_icon, destination_blob_name)
             instance.display_icon = url
         
@@ -281,7 +281,6 @@ class ItemSerializer(serializers.ModelSerializer):
         user = self.context['request'].user # the current user handling the request
         profile = user.account.profile
         files = validated_data.pop('images', [])
-
         validated_data['profile'] = profile
 
         description = validated_data.pop("description")
