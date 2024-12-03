@@ -1,20 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { itemService } from '../../api/api';
+import { supabase } from '../../utils/client';
 import './AddItem.css';
 
 const AddItem = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [itemData, setItemData] = useState({
     title: '',
     description: '',
     starting_bid: '',
-    image_url: '', // You might want to add image upload functionality
+    image_url: '',
     category: '',
     deadline: '', // Format: YYYY-MM-DD HH:MM:SS
   });
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('api_collection')
+          .select('id, title');
+        if (error) throw error;
+        setCategories(data);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        setError('Failed to load categories.');
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -47,7 +66,7 @@ const AddItem = () => {
       collection: itemData.category,
       maximum_bid: bidAmount * 2, // Set a reasonable maximum bid
       minimum_bid: bidAmount, // Set minimum bid same as selling price
-      image_url: itemData.image_url
+      image_url: [itemData.image_url]
     };
 
       console.log('Submitting data:', formattedData); // Debug log
@@ -114,14 +133,20 @@ const AddItem = () => {
 
         <div className="form-group">
           <label htmlFor="category">Category</label>
-          <input
-            type="text"
+          <select
             id="category"
             name="category"
             value={itemData.category}
             onChange={handleChange}
             required
-          />
+          >
+            <option value="">Select a category</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.title}>
+                {category.title}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="form-group">
@@ -148,11 +173,7 @@ const AddItem = () => {
           />
         </div>
 
-        <button 
-          type="submit" 
-          className="submit-button" 
-          disabled={loading}
-        >
+        <button type="submit" className="submit-button" disabled={loading} >
           {loading ? 'Creating Listing...' : 'Start Listing'}
         </button>
       </form>
