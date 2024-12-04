@@ -826,16 +826,35 @@ class ItemViewSet(viewsets.ModelViewSet):
     # /api/items/post-item
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='post-item')
     def create_new_item(self, request):
-        serializer = self.get_serializer(data=request.data)
-
-        if serializer.is_valid():
-            item = serializer.save()
-            profile = item.profile
-            item_count = Item.objects.filter(profile=profile).count()
-            profile.item_count = item_count
-            profile.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            print("Received data:", request.data)  # Debug print
+            serializer = self.get_serializer(data=request.data)
+            
+            if serializer.is_valid():
+                item = serializer.save()
+                profile = item.profile
+                item_count = Item.objects.filter(profile=profile).count()
+                profile.item_count = item_count
+                profile.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+            print("Validation errors:", serializer.errors)  # Debug print
+            return Response(
+                {
+                    "error": "Invalid data",
+                    "details": serializer.errors
+                }, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            print("Exception:", str(e))  # Debug print
+            return Response(
+            {
+                "error": "Server error",
+                "details": str(e)
+            }, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
     
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)

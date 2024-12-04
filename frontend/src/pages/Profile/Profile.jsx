@@ -45,17 +45,35 @@ const Profile = () => {
               console.log('Fetched display_icon:', data.display_icon);
               setDisplayIcon(data.display_icon);
             }
-        }
 
-        // Fetch user's items
-      if (profile && profile.id) {
-        const userItems = await itemService.browseAvailableByProfile(profile.id, token);
-        setItems(userItems);
-      } else {
-        console.error('No user_id found in profile data:', profile);
-        setError('Failed to load user items');
-      }
-        
+            // Fetch items for this profile
+            const { data: itemsData, error: itemsError } = await supabase
+            .from('api_item')
+            .select(`
+            id,
+            title,
+            image_urls,
+            description,
+            selling_price,
+            highest_bid,
+            deadline,
+            date_posted,
+            total_bids,
+            availability,
+            collection:collection_id (title)
+            `)
+            .eq('profile_id', profile.id)
+            .eq('availability', 'A') // 'A' for available items
+            .order('date_posted', { ascending: false });
+
+            if (itemsError) {
+                console.error('Error fetching items:', itemsError);
+                setError('Failed to load items');
+            } else {
+                console.log('Fetched items:', itemsData);
+                setItems(itemsData || []);
+            }
+        }
       } catch (err) {
         console.error('Error fetching profile:', err);
         setError('Failed to load profile data');
@@ -102,15 +120,15 @@ const Profile = () => {
     <div className="profile-container">
       <div className="profile-header">
         <div className="profile-info">
-            <div className="profile-avatar">
-                {displayIcon && (
-                <img 
-                    src={displayIcon} 
-                    alt="Profile" 
-                    className="profile-image"
-                />
-                )}
-            </div>
+          <div className="profile-avatar">
+            {displayIcon && (
+              <img 
+                src={displayIcon} 
+                alt="Profile" 
+                className="profile-image"
+              />
+            )}
+          </div>
           <div className="profile-details">
             <h2>{profileData.username}</h2>
             <p>{profileData.display_name}</p>
@@ -140,41 +158,52 @@ const Profile = () => {
 
       {/* Only show product listings and reviews for non-visitors */}
       {!isVisitor && (
-        <>
-          <div className="product-listings">
-            <div className="listings-header">
-              <h3>Product Listings ({items.length})</h3>
-              {checkPermissions.canUpdateSettings(user) && (
-                <button 
-                  className="add-item-btn"
-                  onClick={handleAddItem}
-                >
-                  + Add Item
-                </button>
-              )}
-            </div>
-
-            <div className="items-grid">
-              {items.map(item => (
-                <div key={item.id} className="item-card">
-                  <img src={item.image_url} alt={item.title} />
-                  <div className="item-info">
-                    <h4>{item.title}</h4>
-                    <p>{item.description}</p>
-                    {checkPermissions.canDeleteItem(user, item) && (
-                      <button 
-                        className="delete-item-btn"
-                        onClick={() => handleDeleteItem(item.id)}
-                      >
-                        X
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+        <div className="product-listings">
+          <div className="listings-header">
+            <h3>Product Listings ({items.length})</h3>
+            {checkPermissions.canUpdateSettings(user) && (
+              <button 
+                className="add-item-btn"
+                onClick={handleAddItem}
+              >
+                + Add Item
+              </button>
+            )}
           </div>
-        </>
+
+          <div className="items-grid">
+            {items.map(item => (
+              <div key={item.id} className="item-card">
+                <img 
+                  src={item.image_urls?.[0]}
+                  alt={item.title} 
+                  onError={(e) => {
+                    e.target.src = '/placeholder-image.jpg';
+                  }}
+                />
+                <div className="item-info">
+                  <h4>{item.title}</h4>
+                  <p>{item.description}</p>
+                  <div className="item-details">
+                    <p>Price: ${item.selling_price}</p>
+                    <p>Current Bid: ${item.highest_bid || 'No bids'}</p>
+                    <p>Collection: {item.collection?.title}</p>
+                    <p>Total Bids: {item.total_bids}</p>
+                    <p>Deadline: {new Date(item.deadline).toLocaleDateString()}</p>
+                  </div>
+                  {checkPermissions.canDeleteItem(user, item) && (
+                    <button 
+                      className="delete-item-btn" 
+                      onClick={() => handleDeleteItem(item.id)}
+                    >
+                      X
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

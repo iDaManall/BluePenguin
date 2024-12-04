@@ -263,8 +263,8 @@ class RatingSerializer(serializers.ModelSerializer):
     
 
 class ItemSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source="profile.account.user.username")
-    display_icon = serializers.ImageField(source="profile.display_icon")
+    username = serializers.CharField(required=False, source="profile.account.user.username")
+    display_icon = serializers.ImageField(required=False, source="profile.display_icon")
     image_urls = serializers.ListField(write_only=True, required=False)
 
     class Meta:
@@ -276,6 +276,9 @@ class ItemSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
+        # Remove extra fields before creating the item
+        validated_data.pop('username', None)
+        validated_data.pop('display_icon', None)
         title = validated_data.pop("title")
         user = self.context['request'].user # the current user handling the request
         profile = user.account.profile

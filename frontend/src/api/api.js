@@ -122,6 +122,58 @@ export const accountService = {
       apiFetch(ACCOUNT_ENDPOINTS.SET_PAYPAL_DETAILS, 'POST', paypalData, token),
   setCardDetails: (cardData, token) => 
       apiFetch(ACCOUNT_ENDPOINTS.SET_CARD_DETAILS, 'POST', cardData, token),
+
+  getShippingAddress: async (token) => {
+    try {
+      // First get the profile ID from the current user's profile
+      const { data: profile, error: profileError } = await supabase
+        .from('api_profile')
+        .select('id')
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Then get the shipping address associated with this profile
+      const { data: address, error: addressError } = await supabase
+        .from('api_shippingaddress')
+        .select(`
+          street_address,
+          address_line_2,
+          city,
+          state,
+          zip,
+          country
+        `)
+        .eq('profile_id', profile.id)
+        .single();
+
+      if (addressError) {
+        // If no address found, return empty object with expected structure
+        return {
+          street: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          country: ''
+        };
+      }
+
+      // Transform the data to match the component's expected structure
+      return {
+        street: `${address.street_address}${address.address_line_2 ? ' ' + address.address_line_2 : ''}`,
+        city: address.city,
+        state: address.state,
+        zipCode: address.zip,
+        country: address.country
+      };
+    } catch (error) {
+      console.error('Error fetching shipping address:', error);
+      throw error;
+    }
+  },
+
+  viewTransactions: (token) => 
+    apiFetch(ACCOUNT_ENDPOINTS.VIEW_TRANSACTIONS, 'GET', null, token),
   viewBalance: (token) => 
     apiFetch(ACCOUNT_ENDPOINTS.VIEW_BALANCE, 'GET', null, token),
   addBalance: (amount, token) => 
@@ -172,11 +224,10 @@ export const itemService = {
         selling_price: parseFloat(itemData.selling_price),
         maximum_bid: parseFloat(itemData.maximum_bid),
         minimum_bid: parseFloat(itemData.minimum_bid),
-        deadline: new Date(itemData.deadline).toISOString(),
+        deadline: itemData.deadline,
         collection: itemData.collection,
         profile: profileResponse.id,
-        // Only include image_urls, not image_url
-        image_urls: [itemData.image_url]
+        image_urls: Array.isArray(itemData.image_urls) ? itemData.image_urls : []
       };
   
       // Log the exact data being sent

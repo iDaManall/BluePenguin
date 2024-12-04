@@ -55,20 +55,24 @@ const AddItem = () => {
         return;
       }
 
-      const bidAmount = parseFloat(itemData.starting_bid);
+      // Ensure image_url is not empty
+    if (!itemData.image_url) {
+      setError('Image URL is required');
+      return;
+    }
 
       // Format data to match backend expectations
-    const formattedData = {
-      title: itemData.title,
-      description: itemData.description,
-      selling_price: bidAmount, // Changed from starting_bid
-      deadline: new Date(itemData.deadline).toISOString(),
-      collection: itemData.category,
-      maximum_bid: bidAmount * 2, // Set a reasonable maximum bid
-      minimum_bid: bidAmount, // Set minimum bid same as selling price
-      image_url: [itemData.image_url]
-    };
-
+      const formattedData = {
+        title: itemData.title,
+        description: itemData.description,
+        selling_price: parseFloat(itemData.starting_bid), 
+        maximum_bid: parseFloat(itemData.maximum_bid),
+        minimum_bid: parseFloat(itemData.minimum_bid),
+        deadline: new Date(itemData.deadline).toISOString(),
+        collection: parseInt(itemData.category), // Convert to integer
+        image_urls: itemData.image_url ? [itemData.image_url] : [] // Ensure it's a non-null array
+      };
+    
       console.log('Submitting data:', formattedData); // Debug log
 
       const response = await itemService.postItem(formattedData, token);
@@ -132,6 +136,33 @@ const AddItem = () => {
         </div>
 
         <div className="form-group">
+          <label htmlFor="minimum_bid">Minimum Bid ($)</label>
+          <input
+            type="number"
+            id="minimum_bid"
+            name="minimum_bid"
+            value={itemData.minimum_bid}
+            onChange={handleChange}
+            required
+            min="0"
+            step="0.01"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="maximum_bid">Maximum Bid ($)</label>
+          <input
+            type="number"
+            id="maximum_bid"
+            name="maximum_bid"
+            value={itemData.maximum_bid}
+            onChange={handleChange}
+            required
+            min="0"
+            step="0.01"
+          />
+        </div>
+        <div className="form-group">
           <label htmlFor="category">Category</label>
           <select
             id="category"
@@ -142,7 +173,7 @@ const AddItem = () => {
           >
             <option value="">Select a category</option>
             {categories.map((category) => (
-              <option key={category.id} value={category.title}>
+              <option key={category.id} value={category.id}>
                 {category.title}
               </option>
             ))}

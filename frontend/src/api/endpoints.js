@@ -13,6 +13,7 @@ export const AUTH_ENDPOINTS = {
     SET_PAYPAL_DETAILS: `/api/accounts/set-paypal-details/`,
     SET_CARD_DETAILS:  `/api/accounts/update-card-details/`,
 
+    VIEW_TRANSACTIONS: '/api/transactions/seller-transactions/',
     VIEW_BALANCE: '/api/accounts/view-current-balance/',
     ADD_BALANCE: '/api/accounts/add-to-balance/',
     VIEW_POINTS: '/api/accounts/view-current-points/',
