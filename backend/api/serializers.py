@@ -291,7 +291,8 @@ class ItemSerializer(serializers.ModelSerializer):
 
         gcs_urls = []
         for file in files:
-            destination_blob_name = f"items/{user.username}/{file.name}"
+            folder_name = item.title.lower().replace(" ", "")
+            destination_blob_name = f"items/{folder_name}/{file.name}"
             url = upload_to_gcs(file, destination_blob_name)
             gcs_urls.append(url)
         
