@@ -3,10 +3,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { profileService, itemService } from '../../api/api';
 import { checkPermissions } from '../../utils/permissions';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../utils/client';
 import './Profile.css';
 
 const Profile = () => {
   const [profileData, setProfileData] = useState(null);
+  const [displayIcon, setDisplayIcon] = useState(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,6 +30,22 @@ const Profile = () => {
         console.log('User from auth context:', user);
         console.log('User status:', user?.status);
         setProfileData(profile);
+
+        // Fetch display_icon from Supabase if we have a profile ID
+        if (profile?.id) {
+            const { data, error } = await supabase
+              .from('api_profile')
+              .select('display_icon')
+              .eq('id', profile.id)
+              .single();
+  
+            if (error) {
+              console.error('Error fetching display_icon:', error);
+            } else if (data) {
+              console.log('Fetched display_icon:', data.display_icon);
+              setDisplayIcon(data.display_icon);
+            }
+        }
 
         // Fetch user's items
       if (profile && profile.id) {
@@ -84,9 +102,15 @@ const Profile = () => {
     <div className="profile-container">
       <div className="profile-header">
         <div className="profile-info">
-          <div className="profile-avatar">
-            {/* Add avatar component or image here */}
-          </div>
+            <div className="profile-avatar">
+                {displayIcon && (
+                <img 
+                    src={displayIcon} 
+                    alt="Profile" 
+                    className="profile-image"
+                />
+                )}
+            </div>
           <div className="profile-details">
             <h2>{profileData.username}</h2>
             <p>{profileData.display_name}</p>
