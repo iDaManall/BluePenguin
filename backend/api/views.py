@@ -437,7 +437,7 @@ class AccountViewSet(viewsets.ModelViewSet):
      
     @action(detail=True, methods=['get'], permission_classes=[AllowAny], url_path='view-current-balance')
     def view_current_balance(self, request, pk=None):
-        account = self.get_object()
+        account = request.user.account
         try:
             current_balance = account.balance
             return Response({"balance": current_balance})
