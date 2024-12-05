@@ -86,22 +86,48 @@ const ItemPage = () => {
   const handleSubmitComment = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/items/${id}/comment/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ text: newComment }),
-      });
+      // Check if user is logged in
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        // User is not logged in
+        setError('Please log in to post a comment');
+        navigate('/login'); // Optional: redirect to login page
+        return;
+      }
 
-      if (!response.ok) throw new Error('Failed to post comment');
-      const newCommentData = await response.json();
-      setComments([...comments, newCommentData]);
+      // Rest of your comment posting logic
+      const { data: newComment, error } = await supabase
+        .from('api_comment')
+        .insert([
+          {
+            item_id: id,
+            profile_id: user.id,
+            text: newComment,
+            date_of_comment: new Date().toISOString(),
+            time_of_comment: new Date().toLocaleTimeString()
+          }
+        ])
+        .select(`
+          *,
+          api_profile:profile_id (
+            *,
+            account:account_id (
+              user:user_id (
+                username
+              )
+            )
+          )
+        `)
+        .single();
+
+      if (error) throw error;
+
+      setComments(prevComments => [newComment, ...prevComments]);
       setNewComment('');
     } catch (err) {
       console.error('Error posting comment:', err);
+      setError(err.message || 'Failed to post comment');
     }
   };
 

@@ -5,9 +5,10 @@ import Register from '../pages/Auth/Register';
 import './Navbar.css';
 import { useAuth } from '../context/AuthContext';
 
-import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
+  const { user } = useAuth();
+  const isVisitor = user?.status === 'VISITOR';
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const dropdownRef = useRef(null);
