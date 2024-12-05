@@ -127,8 +127,9 @@ export const accountService = {
     try {
       // First get the profile ID from the current user's profile
       const { data: profile, error: profileError } = await supabase
-        .from('api_profile')
+        .from('api_account')
         .select('id')
+        .eq('user_id', localStorage.getItem('user_id')) // Add user_id filter
         .single();
 
       if (profileError) throw profileError;
@@ -145,10 +146,12 @@ export const accountService = {
           country
         `)
         .eq('profile_id', profile.id)
+        .limit(1) // Add limit
         .single();
 
       if (addressError) {
         // If no address found, return empty object with expected structure
+        console.log('No address found, returning empty structure');
         return {
           street: '',
           city: '',
@@ -168,14 +171,45 @@ export const accountService = {
       };
     } catch (error) {
       console.error('Error fetching shipping address:', error);
-      throw error;
+      // Return empty structure instead of throwing
+      return {
+        street: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        country: ''
+      };
     }
   },
 
-  viewTransactions: (token) => 
-    apiFetch(ACCOUNT_ENDPOINTS.VIEW_TRANSACTIONS, 'GET', null, token),
-  viewBalance: (token) => 
-    apiFetch(ACCOUNT_ENDPOINTS.VIEW_BALANCE, 'GET', null, token),
+  viewTransactions: async (token) => {
+    try {
+      const response = await apiFetch(ACCOUNT_ENDPOINTS.VIEW_TRANSACTIONS, 'GET', null, token);
+      return Array.isArray(response) ? response : [];
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      return [];
+    }
+  },
+  viewBalance: async (id) => {
+    try {
+      // Get balance from api_account table using user_id
+      const { data: account, error: accountError } = await supabase
+        .from('api_account')
+        .select('balance')
+        .eq('user_id', id)
+        .single();
+
+      if (accountError) throw accountError;
+
+      return {
+        balance: account?.balance || 0
+      };
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+      throw error;
+    }
+  },
   addBalance: (amount, token) => 
     apiFetch(ACCOUNT_ENDPOINTS.ADD_BALANCE, 'POST', { amount }, token),
   viewPoints: (token) => 
