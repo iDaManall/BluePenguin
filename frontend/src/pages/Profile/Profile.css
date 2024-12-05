@@ -21,12 +21,32 @@
   }
   
   .profile-avatar {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    background-color: #f0f0f0;
+    width: 200px;  /* Set a fixed width */
+    height: 200px; /* Set a fixed height */
+    border-radius: 50%;  /* Make it circular */
+    overflow: hidden;  /* Ensure the image stays within the circle */
+    background-color: #f0f0f0;  /* Light gray background for empty state */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 3px solid #e0e0e0;  /* Optional: adds a border */
   }
-  
+  .profile-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;  /* This ensures the image covers the area without distortion */
+  }
+
+  /* Optional: Add hover effect */
+  .profile-avatar:hover {
+    border-color: #007bff;  /* Changes border color on hover */
+    transition: border-color 0.3s ease;
+  }
+
+  .profile-details {
+    flex: 1;
+  }
+
   .profile-details h2 {
     margin: 0 0 10px 0;
   }
@@ -66,11 +86,26 @@
     gap: 20px;
   }
   
+  .item-details {
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: #666;
+  }
+  
+  .item-details p {
+    margin: 5px 0;
+  }
+
   .item-card {
     position: relative;
     border: 1px solid #ddd;
     border-radius: 8px;
     overflow: hidden;
+  }
+  
+  .item-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   }
   
   .item-card img {
@@ -121,12 +156,13 @@
     background-color: #D44235;
 }
 
-/* Adjust profile info for visitor view */
+/* Adjust the profile info layout */
 .profile-info {
     display: flex;
-    gap: 24px;
-    align-items: center;
-}
+    gap: 2rem;  /* Space between avatar and details */
+    align-items: flex-start;
+    padding: 1rem;
+  }
 
 .profile-details h2 {
     font-size: 24px;

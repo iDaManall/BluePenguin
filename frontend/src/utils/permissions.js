@@ -30,7 +30,7 @@ export const checkPermissions = {
 
     canDeleteItem: (user, item) => (
         !!user &&
-        user.id === item.seller.id && 
+        user.id === item?.seller?.id && 
         user.status !== 'VISITOR'
     ),
 

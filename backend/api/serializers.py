@@ -216,19 +216,18 @@ class ProfileSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         for attr in ['display_name', 'display_icon', 'description']:
             if attr in validated_data:
-                setattr(instance, attr, validated_data[attr])
+                if attr == 'display_icon':
+                    display_icon = validated_data['display_icon']
+                    destination_blob_name = f"profile_pics/{instance.account.user.username}/{display_icon.name}"
+                    url = upload_to_gcs(display_icon, destination_blob_name)
+                    setattr(instance, attr, url)
+                else:
+                 setattr(instance, attr, validated_data[attr])
                 # setattr(object, name, value)
                 # object - object whose attribute is to be set
                 # name - attribute name as string
                 # value - value to set for the attribute
                 # e.g. setattr(obj, 'x', 123) is equivalent to obj.x = 123
-        
-        # uploading display icon
-        if 'display_icon' in validated_data:
-            display_icon = validated_data['display_icon']
-            destination_blob_name = f"profile-pics/{instance.account.user.username}/{display_icon.name}"
-            url = upload_to_gcs(display_icon, destination_blob_name)
-            instance.display_icon = url
         
         instance.save()
         return instance
@@ -264,8 +263,8 @@ class RatingSerializer(serializers.ModelSerializer):
     
 
 class ItemSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source="profile.account.user.username")
-    display_icon = serializers.ImageField(source="profile.display_icon")
+    username = serializers.CharField(required=False, source="profile.account.user.username")
+    display_icon = serializers.ImageField(required=False, source="profile.display_icon")
     image_urls = serializers.ListField(write_only=True, required=False)
 
     class Meta:
@@ -277,11 +276,13 @@ class ItemSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
+        # Remove extra fields before creating the item
+        validated_data.pop('username', None)
+        validated_data.pop('display_icon', None)
         title = validated_data.pop("title")
         user = self.context['request'].user # the current user handling the request
         profile = user.account.profile
         files = validated_data.pop('images', [])
-
         validated_data['profile'] = profile
 
         description = validated_data.pop("description")
@@ -293,7 +294,8 @@ class ItemSerializer(serializers.ModelSerializer):
 
         gcs_urls = []
         for file in files:
-            destination_blob_name = f"items/{user.username}/{file.name}"
+            folder_name = item.title.lower().replace(" ", "")
+            destination_blob_name = f"items/{folder_name}/{file.name}"
             url = upload_to_gcs(file, destination_blob_name)
             gcs_urls.append(url)
         

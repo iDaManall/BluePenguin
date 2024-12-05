@@ -5,14 +5,20 @@ import Register from '../pages/Auth/Register';
 import './Navbar.css';
 import { useAuth } from '../context/AuthContext';
 
-
 const Navbar = () => {
   const { user } = useAuth();
-  const isVisitor = user?.status === 'VISITOR';
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const dropdownRef = useRef(null);
   const categoryRef = useRef(null);
+
+  // console logs if debugging needed
+  // console.log('Current user:', user);
+  // console.log('User status:', user?.status);
+  // console.log('Should show apply button:', user && user.status === 'V');
+  
+  // Check if user is a visitor
+  const isVisitor = user?.status === 'V';
 
   // Categories data structure
   const categories = [
