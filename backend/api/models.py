@@ -273,14 +273,16 @@ class Comment(models.Model):
     time_of_comment = models.TimeField(auto_now_add=True)
     text = models.TextField(max_length=1000)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
+    likes = models.PositiveIntegerField(default=0)
+    dislikes = models.PositiveIntegerField(default=0)
 
 class Like(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="likes")
-    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name="likes")
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
 
 class Dislike(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="dislikes")
-    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name="dislikes")
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
 
 class Save(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
