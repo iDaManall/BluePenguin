@@ -18,19 +18,25 @@ const PaymentsAndAddress = () => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('access_token');
-        const balanceData = await accountService.viewBalance(token);
+        const id = localStorage.getItem('user_id');
+
+        if (!token || !id) {
+            setError('No authentication credentials found');
+            setLoading(false);
+            return;
+        }
+
+        const balanceData = await accountService.viewBalance(id);
         setBalance(balanceData.balance);
         
         // Use existing viewTransactions endpoint
         const transactionsData = await accountService.viewTransactions(token);
         setTransactions(transactionsData);
 
-        // Fetch shipping address if you have an endpoint for it
         const addressResponse = await accountService.getShippingAddress(token);
-        if (addressResponse) {
-          setAddress(addressResponse);
-        }
-      } catch (err) {
+        setAddress(addressResponse);
+        } catch (err) {
+        console.error('Error fetching data:', err);
         setError('Failed to load account information');
         console.error(err);
       } finally {
