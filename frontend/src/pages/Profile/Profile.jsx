@@ -29,7 +29,7 @@ const Profile = () => {
         console.log('Profile data:', profile); // Add this line to debug
         console.log('User from auth context:', user);
         console.log('User status:', user?.status);
-        setProfileData(profile);
+        setProfileData(profile); // Update profile data regardless of user state
 
         // Fetch display_icon from Supabase if we have a profile ID
         if (profile?.id) {
@@ -82,8 +82,18 @@ const Profile = () => {
       }
     };
 
-    fetchProfileData();
-  }, [navigate, user]);
+    // Only fetch if we have a token
+    if (localStorage.getItem('access_token')) {
+        fetchProfileData();
+    }
+  }, []);
+
+  // Add a separate effect for user-dependent logic
+    useEffect(() => {
+        if (user) {
+        console.log('User updated:', user);
+        }
+    }, [user]);
 
   const handleDeleteItem = async (itemId) => {
     try {
