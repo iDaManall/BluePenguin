@@ -15,6 +15,11 @@ const ItemPage = () => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [selectedImage, setSelectedImage] = useState(0);
+  const { user, profile } = useAuth();  // Add profile to the destructuring
+
+  useEffect(() => {
+    console.log('Auth State:', { user, profile });
+  }, [user, profile]);
 
   useEffect(() => {
     const fetchItemData = async () => {
@@ -86,26 +91,24 @@ const ItemPage = () => {
   const handleSubmitComment = async (e) => {
     e.preventDefault();
     try {
-      // Check if user is logged in
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        // User is not logged in
+      if (!user || !profile) {
         setError('Please log in to post a comment');
-        navigate('/login'); // Optional: redirect to login page
+        navigate('/login');
         return;
       }
 
-      // Rest of your comment posting logic
-      const { data: newComment, error } = await supabase
+      // Use the profile ID directly from the auth context
+      const { data: commentData, error } = await supabase
         .from('api_comment')
         .insert([
           {
             item_id: id,
-            profile_id: user.id,
+            profile_id: profile.id,
             text: newComment,
             date_of_comment: new Date().toISOString(),
-            time_of_comment: new Date().toLocaleTimeString()
+            time_of_comment: new Date().toLocaleTimeString(),
+            dislikes: 0,  // Add default value for dislikes
+            likes: 0      // Add default value for likes
           }
         ])
         .select(`
@@ -123,7 +126,7 @@ const ItemPage = () => {
 
       if (error) throw error;
 
-      setComments(prevComments => [newComment, ...prevComments]);
+      setComments(prevComments => [commentData, ...prevComments]);
       setNewComment('');
     } catch (err) {
       console.error('Error posting comment:', err);
