@@ -125,33 +125,25 @@ export const accountService = {
 
   getShippingAddress: async (token) => {
     try {
-      // First get the profile ID from the current user's profile
+      // First get the profile data
       const { data: profile, error: profileError } = await supabase
         .from('api_account')
-        .select('id')
-        .eq('user_id', localStorage.getItem('user_id')) // Add user_id filter
-        .single();
-
-      if (profileError) throw profileError;
-
-      // Then get the shipping address associated with this profile
-      const { data: address, error: addressError } = await supabase
-        .from('api_shippingaddress')
         .select(`
-          street_address,
-          address_line_2,
-          city,
-          state,
-          zip,
-          country
+          id,
+          shipping_address:shipping_address_id (
+            street_address,
+            address_line_2,
+            city,
+            state,
+            zip,
+            country
+          )
         `)
-        .eq('profile_id', profile.id)
-        .limit(1) // Add limit
+        .eq('user_id', localStorage.getItem('user_id'))
         .single();
-
-      if (addressError) {
-        // If no address found, return empty object with expected structure
-        console.log('No address found, returning empty structure');
+  
+      if (profileError) {
+        console.error('Profile error:', profileError);
         return {
           street: '',
           city: '',
@@ -160,18 +152,30 @@ export const accountService = {
           country: ''
         };
       }
-
+  
+      if (!profile?.shipping_address) {
+        console.log('No address found for profile');
+        return {
+          street: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          country: ''
+        };
+      }
+  
       // Transform the data to match the component's expected structure
       return {
-        street: `${address.street_address}${address.address_line_2 ? ' ' + address.address_line_2 : ''}`,
-        city: address.city,
-        state: address.state,
-        zipCode: address.zip,
-        country: address.country
+        street: `${profile.shipping_address.street_address}${
+          profile.shipping_address.address_line_2 ? ' ' + profile.shipping_address.address_line_2 : ''
+        }`,
+        city: profile.shipping_address.city,
+        state: profile.shipping_address.state,
+        zipCode: profile.shipping_address.zip,
+        country: profile.shipping_address.country
       };
     } catch (error) {
       console.error('Error fetching shipping address:', error);
-      // Return empty structure instead of throwing
       return {
         street: '',
         city: '',
@@ -182,10 +186,42 @@ export const accountService = {
     }
   },
 
+  // viewTransactions: async (token) => {
+  //   try {
+  //     const response = await apiFetch(ACCOUNT_ENDPOINTS.VIEW_TRANSACTIONS, 'GET', null, token);
+  //     return Array.isArray(response) ? response : [];
+  //   } catch (error) {
+  //     console.error('Error fetching transactions:', error);
+  //     return [];
+  //   }
+  // },
   viewTransactions: async (token) => {
     try {
-      const response = await apiFetch(ACCOUNT_ENDPOINTS.VIEW_TRANSACTIONS, 'GET', null, token);
-      return Array.isArray(response) ? response : [];
+      const { data: transactions, error } = await supabase
+        .from('api_transaction')
+        .select(`
+          id,
+          status,
+          bid_id,
+          buyer_id,
+          seller_id,
+          carrier,
+          estimated_delivery,
+          shipping_cost
+        `)
+        .eq('seller_id', localStorage.getItem('user_id'))  // or buyer_id depending on what you want to show
+        .order('estimated_delivery', { ascending: false });
+  
+      if (error) throw error;
+  
+      return transactions.map(t => ({
+        id: t.id,
+        amount: t.shipping_cost, // Using shipping_cost as the amount
+        date: t.estimated_delivery ? new Date(t.estimated_delivery).toLocaleDateString() : 'Pending',
+        account: `Transaction #${t.id}`, // Using transaction ID since we don't have username
+        status: t.status,
+        carrier: t.carrier || 'Not assigned'
+      }));
     } catch (error) {
       console.error('Error fetching transactions:', error);
       return [];
