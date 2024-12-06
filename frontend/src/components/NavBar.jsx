@@ -6,11 +6,11 @@ import './Navbar.css';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
+  const { user } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const dropdownRef = useRef(null);
   const categoryRef = useRef(null);
-  const { user } = useAuth();
 
   // console logs if debugging needed
   // console.log('Current user:', user);

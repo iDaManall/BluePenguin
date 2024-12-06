@@ -15,6 +15,11 @@ const ItemPage = () => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [selectedImage, setSelectedImage] = useState(0);
+  const { user, profile } = useAuth();  // Add profile to the destructuring
+
+  useEffect(() => {
+    console.log('Auth State:', { user, profile });
+  }, [user, profile]);
 
   useEffect(() => {
     const fetchItemData = async () => {
@@ -86,22 +91,46 @@ const ItemPage = () => {
   const handleSubmitComment = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/items/${id}/comment/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ text: newComment }),
-      });
+      if (!user || !profile) {
+        setError('Please log in to post a comment');
+        navigate('/login');
+        return;
+      }
 
-      if (!response.ok) throw new Error('Failed to post comment');
-      const newCommentData = await response.json();
-      setComments([...comments, newCommentData]);
+      // Use the profile ID directly from the auth context
+      const { data: commentData, error } = await supabase
+        .from('api_comment')
+        .insert([
+          {
+            item_id: id,
+            profile_id: profile.id,
+            text: newComment,
+            date_of_comment: new Date().toISOString(),
+            time_of_comment: new Date().toLocaleTimeString(),
+            dislikes: 0,  // Add default value for dislikes
+            likes: 0      // Add default value for likes
+          }
+        ])
+        .select(`
+          *,
+          api_profile:profile_id (
+            *,
+            account:account_id (
+              user:user_id (
+                username
+              )
+            )
+          )
+        `)
+        .single();
+
+      if (error) throw error;
+
+      setComments(prevComments => [commentData, ...prevComments]);
       setNewComment('');
     } catch (err) {
       console.error('Error posting comment:', err);
+      setError(err.message || 'Failed to post comment');
     }
   };
 

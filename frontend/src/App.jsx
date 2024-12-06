@@ -13,6 +13,7 @@ import ItemPage from './pages/ItemPage/ItemPage';
 import ApplyUser from "./pages/Auth/ApplyUser";
 import EditProfile from "./pages/Profile/EditProfile";
 import PaymentsAndAddress from "./pages/PaymentsAndAddress/PaymentsAndAddress";
+import Orders from "./pages/orders/orders";
 
 // clear refresh and access token when we log out, navigate to login page
 function Logout(){
@@ -48,6 +49,7 @@ function App() {
           <Route path="/items/:id" element={<ItemPage />} />
           <Route path="/apply-user" element={<ApplyUser />} />
           <Route path="/payments" element={<PaymentsAndAddress />} />
+          <Route path="/orders" element={<Orders />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

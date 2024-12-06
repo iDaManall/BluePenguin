@@ -1,72 +1,78 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../utils/client'
 import { authService } from '../api/api';
+import { profileService } from '../api/api';
 
 const AuthContext = createContext({})
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
+  const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const rehydrateUser = () => {
+    const rehydrateUser = async () => {
       const token = localStorage.getItem('access_token');
       const userId = localStorage.getItem('user_id');
       const userStatus = localStorage.getItem('user_status');
       
       if (token && userId) {
-        // Remove 'Bearer ' prefix if it exists
         const cleanToken = token.replace('Bearer ', '');
         
-        // Rehydrate the user object from localStorage with proper structure
         const rehydratedUser = {
           id: userId,
           access_token: `Bearer ${cleanToken}`,
-          status: userStatus // Make sure this matches exactly what your backend returns ('U' or 'V')
+          status: userStatus,
+          email: localStorage.getItem('user_email'),
+          username: localStorage.getItem('username'),
+          first_name: localStorage.getItem('first_name'),
+          last_name: localStorage.getItem('last_name')
         };
 
-        console.log('Rehydrating user:', rehydratedUser); // Debug log
         setUser(rehydratedUser);
-        return true; // indicate successful rehydration
+
+        // Fetch fresh profile data from Django backend
+        try {
+          const profile = await profileService.viewOwnProfile(`Bearer ${cleanToken}`);
+          if (profile) {
+            localStorage.setItem('profile_id', profile.id);
+            setProfile(profile);
+          }
+        } catch (err) {
+          console.error('Error fetching profile:', err);
+        }
+
+        return true;
       }
       return false;
     };
   
-    // First try to rehydrate from localStorage
-    const wasRehydrated = rehydrateUser();
+    rehydrateUser();
+    setLoading(false);
 
-    // Only check Supabase session if rehydration failed
-    if (!wasRehydrated) {
-      // If rehydration failed, check Supabase session
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) {
-          // If we have a Supabase session, try to get status from localStorage
-          const userStatus = localStorage.getItem('user_status');
-          setUser({
-            ...session.user,
-            status: userStatus || 'V' // Default to visitor if no status found
-          });
-        } else {
-          setUser(null);
-        }
-      });
-    }
-
-    setLoading(false); // Move this here to ensure user is set before loading ends
-
-    // Listen for changes on auth state (keep this part)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user && !user) {
         const userStatus = localStorage.getItem('user_status');
-        setUser({
+        const newUser = {
           ...session.user,
           status: userStatus || 'V'
-        });
+        };
+        setUser(newUser);
+
+        const { data: profileData } = await supabase
+          .from('api_profile')
+          .select('*')
+          .eq('account_id', newUser.id)
+          .single();
+
+        if (profileData) {
+          setProfile(profileData);
+        }
       }
     });
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [window.location.pathname])
 
   const signIn = async (email, password) => {
     try {
@@ -76,7 +82,7 @@ export const AuthProvider = ({ children }) => {
       if (!djangoResponse) {
         throw new Error('Failed to authenticate with backend');
       }
-  
+
       // Store tokens first
       // Store the complete token with Bearer prefix
       const tokenWithBearer = `Bearer ${djangoResponse.access_token}`;
@@ -85,6 +91,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('refresh_token', djangoResponse.refresh_token);
       localStorage.setItem('user_id', djangoResponse.user.id);
       localStorage.setItem('user_status', djangoResponse.user.status); // Make sure this is 'U' or 'V'
+
 
       // Debug log
       console.log('Setting user state:', {
@@ -98,6 +105,19 @@ export const AuthProvider = ({ children }) => {
         access_token: tokenWithBearer,
         status: djangoResponse.user.status // Ensure this is included
       });
+
+      // Fetch and store profile data immediately after login
+    const { data: profileData } = await supabase
+    .from('api_profile')
+    .select('*')
+    .eq('account_id', djangoResponse.user.id)
+    .single();
+
+  if (profileData) {
+    // Store profile_id in localStorage
+    localStorage.setItem('profile_id', profileData.id);
+    setProfile(profileData);
+  }
 
       return djangoResponse;
     } catch (error) {
@@ -158,18 +178,21 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) throw error;
-    // Clear all relevant localStorage items
+    
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user_id');
     localStorage.removeItem('user_status');
     localStorage.removeItem('token_timestamp');
+    localStorage.removeItem('profile_id');
+    
     setUser(null);
+    setProfile(null);
   }
 
   // Provides these values to all child components. Renders the children only when the loading state is false.
   return (
-    <AuthContext.Provider value={{ user, signIn, signUp, signOut, loading }}>
+    <AuthContext.Provider value={{ user, profile, signIn, signUp, signOut, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   )
