@@ -72,7 +72,7 @@ class PayPalDetailsSerializer(serializers.ModelSerializer):
 class ShippingAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShippingAddress
-        fields = ["id", "street_address", "city", "state", "province_territory", "zip", "country"]
+        fields = ["id", "street_address", "address_line_2", "city", "state", "zip", "country"]
     
     def create(self, validated_data):
         return ShippingAddress.objects.create(**validated_data)
