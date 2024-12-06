@@ -116,8 +116,16 @@ export const authService = {
 export const accountService = {
   updateSettings: (settingsData, token) => 
       apiFetch(ACCOUNT_ENDPOINTS.UPDATE_SETTINGS, 'PATCH', settingsData, token),
-  setShippingAddress: (addressData, token) => 
-      apiFetch(ACCOUNT_ENDPOINTS.SET_SHIPPING_ADDRESS, 'POST', addressData, token),
+  setShippingAddress: async (addressData, token) => {
+    try {
+      const response = await apiFetch(ACCOUNT_ENDPOINTS.SET_SHIPPING_ADDRESS, 'POST', addressData, token);
+      return response;
+    } catch (error) {
+      // Log the full error
+      console.error('Shipping address error details:', error);
+      throw error;
+    }
+  },
   setPaypalDetails: (paypalData, token) => 
       apiFetch(ACCOUNT_ENDPOINTS.SET_PAYPAL_DETAILS, 'POST', paypalData, token),
   setCardDetails: (cardData, token) => 
@@ -145,10 +153,11 @@ export const accountService = {
       if (profileError) {
         console.error('Profile error:', profileError);
         return {
-          street: '',
+          street_address: '',
+          address_line_2: '',
           city: '',
           state: '',
-          zipCode: '',
+          zip: '',
           country: ''
         };
       }
@@ -156,31 +165,32 @@ export const accountService = {
       if (!profile?.shipping_address) {
         console.log('No address found for profile');
         return {
-          street: '',
+          street_address: '',
+          address_line_2: '',
           city: '',
           state: '',
-          zipCode: '',
+          zip: '',
           country: ''
         };
       }
   
       // Transform the data to match the component's expected structure
       return {
-        street: `${profile.shipping_address.street_address}${
-          profile.shipping_address.address_line_2 ? ' ' + profile.shipping_address.address_line_2 : ''
-        }`,
+        street_address: profile.shipping_address.street_address,
+        address_line_2: profile.shipping_address.address_line_2,
         city: profile.shipping_address.city,
         state: profile.shipping_address.state,
-        zipCode: profile.shipping_address.zip,
+        zip: profile.shipping_address.zip,
         country: profile.shipping_address.country
       };
     } catch (error) {
       console.error('Error fetching shipping address:', error);
       return {
-        street: '',
+        street_address: '',
+        address_line_2: '',
         city: '',
         state: '',
-        zipCode: '',
+        zip: '',
         country: ''
       };
     }

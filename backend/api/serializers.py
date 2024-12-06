@@ -81,7 +81,7 @@ class ShippingAddressSerializer(serializers.ModelSerializer):
         shipping_address_data = validated_data.pop("shipping_address", None)
         if shipping_address_data:
             shipping_address = instance.shipping_address
-            for attr in ['street_address', 'city', 'state', 'province_territory', 'zip', 'country']:
+            for attr in ['street_address', 'city', 'state', 'zip', 'country']:
                 if attr in shipping_address_data:
                     setattr(shipping_address, attr, shipping_address_data[attr])
             shipping_address.save()
