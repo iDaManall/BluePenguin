@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { accountService } from '../../api/api';
+import { Link } from 'react-router-dom';
 import './PaymentsAndAddress.css';
 
 const PaymentsAndAddress = () => {
@@ -146,38 +147,41 @@ const PaymentsAndAddress = () => {
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <div className="payments-container">
-      {/* Available Balance Section */}
-      <div className="balance-section">
-        <h2>Available Balance</h2>
-        <div className="balance-amount">
-          <span>$ {balance.toFixed(2)}</span>
-        </div>
-        <div className="balance-actions">
-          <button onClick={() => setShowAddMoneyModal(true)}>Add Money</button>
-          <div className="payment-methods">Zelle | PayPal</div>
-        </div>
-      </div>
+        <div className="payments-container">
 
-      {/* Transactions Section */}
-      <div className="transactions-section">
+        {/* Available Balance Section */}
+        <div className="balance-section">
+            <h2>Available Balance</h2>
+            <div className="balance-amount">
+            <span>$ {balance.toFixed(2)}</span>
+            </div>
+            <div className="balance-actions">
+            <button onClick={() => setShowAddMoneyModal(true)}>Add Money</button>
+            <div className="payment-methods">Zelle | PayPal</div>
+            </div>
+        </div>
+
+        {/* Transactions Section */}
+        <div className="transactions-section">
         <h2>Transactions</h2>
         <div className="transactions-list">
-          {transactions.map((transaction, index) => (
+            {transactions.map((transaction, index) => (
             <div key={index} className="transaction-item">
-              <div className="transaction-details">
-                <span>#{transaction.account}</span>
+                <div className="transaction-details">
+                <Link to={`/profile/${transaction.profileId}`}>
+                    #{transaction.account}
+                </Link>
                 <span>{transaction.date}</span>
-              </div>
-              <div className="transaction-amount">
+                </div>
+                <div className="transaction-amount">
                 $ {transaction.amount.toFixed(2)}
-              </div>
+                </div>
             </div>
-          ))}
+            ))}
         </div>
-      </div>
+        </div>
 
-      {/* Shipping Address Section */}
+        {/* Shipping Address Section */}
         <div className="address-section">
         <h2>Shipping Address</h2>
         <div className="address-display">
@@ -258,30 +262,30 @@ const PaymentsAndAddress = () => {
         )}
 
         {/* Add Money Modal */}
-      {showAddMoneyModal && (
-        <div className="modal-overlay" onClick={() => setShowAddMoneyModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3 className="modal-title">Add Money to Balance</h3>
-            <div className="add-money-form">
-              <div className="form-group">
-                <label>Amount to Add ($)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={amountToAdd}
-                  onChange={(e) => setAmountToAdd(e.target.value)}
-                  placeholder="Enter amount"
-                />
-              </div>
-              <div className="address-form-buttons">
-                <button onClick={handleAddMoney}>Add Money</button>
-                <button onClick={() => setShowAddMoneyModal(false)}>Cancel</button>
-              </div>
+        {showAddMoneyModal && (
+            <div className="modal-overlay" onClick={() => setShowAddMoneyModal(false)}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+                <h3 className="modal-title">Add Money to Balance</h3>
+                <div className="add-money-form">
+                <div className="form-group">
+                    <label>Amount to Add ($)</label>
+                    <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={amountToAdd}
+                    onChange={(e) => setAmountToAdd(e.target.value)}
+                    placeholder="Enter amount"
+                    />
+                </div>
+                <div className="address-form-buttons">
+                    <button onClick={handleAddMoney}>Add Money</button>
+                    <button onClick={() => setShowAddMoneyModal(false)}>Cancel</button>
+                </div>
+                </div>
             </div>
-          </div>
-        </div>
-      )}
+            </div>
+        )}
     </div>
   );
 };

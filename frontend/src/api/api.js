@@ -219,30 +219,43 @@ export const accountService = {
   // },
   viewTransactions: async (token) => {
     try {
-      const { data: transactions, error } = await supabase
+      // First get the account ID for the current user
+      const { data: account, error: accountError } = await supabase
+        .from('api_account')
+        .select('id')
+        .eq('user_id', localStorage.getItem('user_id'))
+        .single();
+  
+      if (accountError) throw accountError;
+  
+      // Then get transactions with related bid and profile information
+      const { data: transactions, error: transactionError } = await supabase
         .from('api_transaction')
         .select(`
-          id,
-          status,
           bid_id,
-          buyer_id,
-          seller_id,
-          carrier,
-          estimated_delivery,
-          shipping_cost
+          api_bid!inner (
+            bid_price,
+            time_of_bid,
+            profile_id,
+            api_profile:profile_id (
+              id,
+              display_name
+            )
+          )
         `)
-        .eq('seller_id', localStorage.getItem('user_id'))  // or buyer_id depending on what you want to show
+        .eq('seller_id', account.id)
         .order('estimated_delivery', { ascending: false });
   
-      if (error) throw error;
+      if (transactionError) throw transactionError;
   
+      // Transform the data to match the component's expected structure
       return transactions.map(t => ({
         id: t.id,
-        amount: t.shipping_cost, // Using shipping_cost as the amount
-        date: t.estimated_delivery ? new Date(t.estimated_delivery).toLocaleDateString() : 'Pending',
-        account: `Transaction #${t.id}`, // Using transaction ID since we don't have username
-        status: t.status,
-        carrier: t.carrier || 'Not assigned'
+        amount: t.api_bid.bid_price,
+        date: t.api_bid.time_of_bid ? new Date(t.api_bid.time_of_bid).toLocaleDateString() : 'Pending',
+        account: t.api_bid.api_profile.display_name,
+        profileId: t.api_bid.api_profile.id, // Include this if you want to link to the profile
+        status: t.status
       }));
     } catch (error) {
       console.error('Error fetching transactions:', error);
