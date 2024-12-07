@@ -3,6 +3,8 @@ import { accountService } from '../../api/api';
 import './PaymentsAndAddress.css';
 
 const PaymentsAndAddress = () => {
+  const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
+  const [amountToAdd, setAmountToAdd] = useState('');
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
   const [address, setAddress] = useState({
@@ -52,15 +54,32 @@ const PaymentsAndAddress = () => {
 
   const handleAddMoney = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      // You would typically integrate with Zelle/PayPal here
-      // For now, we'll just show a placeholder
-      alert('Redirect to payment provider');
-    } catch (err) {
-      setError('Failed to process payment');
-      console.error(err);
-    }
-  };
+        if (!amountToAdd || isNaN(amountToAdd) || parseFloat(amountToAdd) <= 0) {
+          setError('Please enter a valid amount');
+          return;
+        }
+  
+        const token = localStorage.getItem('access_token');
+        const amount = parseFloat(amountToAdd);
+        
+        await accountService.addBalance(amount, token);
+        
+        // Refresh balance
+        const id = localStorage.getItem('user_id');
+        const balanceData = await accountService.viewBalance(id);
+        setBalance(balanceData.balance);
+        
+        // Reset and close modal
+        setAmountToAdd('');
+        setShowAddMoneyModal(false);
+        
+        // Show success message
+        alert('Money added successfully!');
+      } catch (err) {
+        setError('Failed to add money');
+        console.error(err);
+      }
+    };
 
   const handleChangeAddress = async () => {
     try {
@@ -135,7 +154,7 @@ const PaymentsAndAddress = () => {
           <span>$ {balance.toFixed(2)}</span>
         </div>
         <div className="balance-actions">
-          <button onClick={handleAddMoney}>Add Money</button>
+          <button onClick={() => setShowAddMoneyModal(true)}>Add Money</button>
           <div className="payment-methods">Zelle | PayPal</div>
         </div>
       </div>
@@ -237,6 +256,32 @@ const PaymentsAndAddress = () => {
             </div>
         </div>
         )}
+
+        {/* Add Money Modal */}
+      {showAddMoneyModal && (
+        <div className="modal-overlay" onClick={() => setShowAddMoneyModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3 className="modal-title">Add Money to Balance</h3>
+            <div className="add-money-form">
+              <div className="form-group">
+                <label>Amount to Add ($)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={amountToAdd}
+                  onChange={(e) => setAmountToAdd(e.target.value)}
+                  placeholder="Enter amount"
+                />
+              </div>
+              <div className="address-form-buttons">
+                <button onClick={handleAddMoney}>Add Money</button>
+                <button onClick={() => setShowAddMoneyModal(false)}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

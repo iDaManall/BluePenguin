@@ -5,6 +5,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
+    margin-top: 100px;
   }
   
   .balance-section {
@@ -36,6 +37,16 @@
     color: #4A90E2;
     font-weight: bold;
     cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+  }
+
+  .balance-actions button:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-1px);
+  }
+  
+  .balance-actions button:active {
+    transform: translateY(0);
   }
   
   .payment-methods {
@@ -161,6 +172,26 @@
   }
   
   .form-group input:focus {
+    outline: none;
+    border-color: #4A90E2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+  }
+
+  .add-money-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .add-money-form input[type="number"] {
+    padding: 0.8rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    width: 100%;
+  }
+  
+  .add-money-form input[type="number"]:focus {
     outline: none;
     border-color: #4A90E2;
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
