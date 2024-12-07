@@ -295,8 +295,10 @@ export const accountService = {
     apiFetch(ACCOUNT_ENDPOINTS.VIEW_PENDING_BIDS(pk), 'GET', null, token),
   requestQuit: (token) => 
     apiFetch(AUTH_ENDPOINTS.REQUEST_QUIT, 'POST', null, token),
-  applyToBeUser: (token) => 
-    apiFetch(AUTH_ENDPOINTS.APPLY_TO_BE_USER, 'POST', null, token),
+  getArithmeticQuestion: (token) => 
+    apiFetch(AUTH_ENDPOINTS.APPLY_TO_BE_USER, 'GET', null, token),
+  applyToBeUser: (answerData, token) => 
+    apiFetch(AUTH_ENDPOINTS.APPLY_TO_BE_USER, 'POST', answerData, token),
   paySuspensionFine: (token) => 
     apiFetch(AUTH_ENDPOINTS.PAY_SUSPENSION_FINE, 'POST', null, token),
 };
