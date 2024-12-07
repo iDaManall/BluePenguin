@@ -81,18 +81,30 @@ const PaymentsAndAddress = () => {
       }
 
       const token = localStorage.getItem('access_token');
-      // Format the address data according to backend expectations
+
+      // Check if we have any existing address data
+      const hasExistingAddress = address.street_address && address.city;
+      const method = hasExistingAddress ? 'PATCH' : 'POST';
+      // Map country code to full name
+      const countryMap = {
+        'JP': 'Japan',
+        // Add other mappings as needed
+      };
+
+      // Send flat data structure
       const addressData = {
         street_address: address.street_address,
         address_line_2: address.address_line_2 || '',
         city: address.city,
         state: address.state || '',
         zip: address.zip,
-        country: address.country
-     };
+        country: countryMap[address.country] || address.country // Convert JP to Japan
+      };
+
+      console.log(`Using ${method} method for shipping address:`, addressData);
       
-     console.log('About to send address data:', addressData);
-     await accountService.setShippingAddress(addressData, token);
+      const response = await accountService.setShippingAddress(addressData, token, method);
+      console.log('Response from backend:', response);
 
       setIsEditing(false); // Close modal after success
 

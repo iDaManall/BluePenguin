@@ -89,6 +89,11 @@ const apiFetch = async (endpoint, method = "GET", body = null, token = null) => 
     });
 
     const response = await fetch(`${BASE_URL}${endpoint}`, config);
+
+    // Add these lines to see the raw response
+    const responseText = await response.text();
+    console.log('Raw response text:', responseText);
+
     // Log response safely
     console.log('Response received:', {
       status: response.status,
@@ -99,7 +104,8 @@ const apiFetch = async (endpoint, method = "GET", body = null, token = null) => 
       throw new Error(`API Error: ${response.status}`);
     }
 
-    return response.json();
+    // Only try to parse as JSON if we have content
+    return responseText ? JSON.parse(responseText) : null;
   } catch (error) {
     console.error('API Call Error:', error);
     throw error;
@@ -116,12 +122,18 @@ export const authService = {
 export const accountService = {
   updateSettings: (settingsData, token) => 
       apiFetch(ACCOUNT_ENDPOINTS.UPDATE_SETTINGS, 'PATCH', settingsData, token),
-  setShippingAddress: async (addressData, token) => {
+  setShippingAddress: async (addressData, token, method = 'POST') => {
     try {
-      const response = await apiFetch(ACCOUNT_ENDPOINTS.SET_SHIPPING_ADDRESS, 'POST', addressData, token);
+      console.log(`Sending address data to backend using ${method}:`, addressData);
+      const response = await apiFetch(
+        ACCOUNT_ENDPOINTS.SET_SHIPPING_ADDRESS, 
+        method,  // Use the method passed in
+        addressData, 
+        token
+      );
+      console.log('Backend response:', response);
       return response;
     } catch (error) {
-      // Log the full error
       console.error('Shipping address error details:', error);
       throw error;
     }
