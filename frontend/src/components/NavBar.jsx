@@ -105,7 +105,7 @@ const Navbar = () => {
           {isDropdownOpen && (
             <div className="dropdown-menu">
               <div className="dropdown-section">
-                <Link to="/profile">Profile</Link>
+                <Link to={`/profile/${user?.profile_id || ''}`}>Profile</Link>
                 <Link to="/account/settings">Account Setting</Link>
                 <Link to="/payments">Payments / Address</Link>
 

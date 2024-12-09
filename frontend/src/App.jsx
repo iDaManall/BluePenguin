@@ -45,7 +45,7 @@ function App() {
           <Route path = "/home" element = {<Home />} />
           <Route path = "*" element = {<NotFound />}></Route>
           <Route path="/account/settings" element={<AccountSettings />} />
-          <Route path="/profile" element={<Profile />} />
+          {/* <Route path="/profile" element={<Profile />} /> */}
           <Route path="/profile/:id?" element={<Profile />} />
           <Route path="/profile/edit" element={<EditProfile />} />
           <Route path="/items/new" element={<AddItem />} />
