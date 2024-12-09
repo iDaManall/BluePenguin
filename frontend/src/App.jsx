@@ -17,6 +17,7 @@ import Orders from "./pages/orders/orders";
 import Requests from "./pages/Requests/Requests";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import SearchResults from "./components/SearchResults";
 
 // clear refresh and access token when we log out, navigate to login page
 function Logout(){
@@ -55,6 +56,7 @@ function App() {
           <Route path="/payments" element={<PaymentsAndAddress />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/requests" element={<Requests />} />
+          <Route path="/search" element={<SearchResults />} />
         </Routes>
         <ToastContainer position="top-right" autoClose={3000} />
       </BrowserRouter>
