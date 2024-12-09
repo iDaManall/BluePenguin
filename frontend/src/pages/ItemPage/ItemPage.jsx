@@ -339,8 +339,8 @@ const ItemPage = () => {
           <div className="seller-info">
             <span>
               Seller:{' '}
-              <Link to={`/profile/${item.profile?.account?.user?.id}`} className="seller-link">
-                {item.profile?.account?.user?.username}
+              <Link to={`/profile/${item.profile.id}`} className="seller-link">
+    {item.profile?.account?.user?.username}
               </Link>
             </span>
             <span>Rating: {item.profile?.average_rating ? item.profile.average_rating.toFixed(1) : 'N/A'}</span>
