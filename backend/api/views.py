@@ -547,6 +547,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         ).exists()
 
         if existing_application:
+            print(f"Found existing application for user: {request.user.username}")
             return Response(
                 {"error": "You already have a pending application"},
                 status=status.HTTP_400_BAD_REQUEST
@@ -555,25 +556,57 @@ class AccountViewSet(viewsets.ModelViewSet):
         # get captcha
         if request.method == 'GET':
             question_data = generate_random_arithmetic_question()
-            request.session['captcha_answer'] = question_data['answer']
+            # Store in cache instead of session
+            cache_key = f"captcha_{request.user.id}"
+            cache.set(cache_key, {
+                'answer': question_data['answer'],
+                'question': question_data['question']
+            }, timeout=300)  # 5 minute timeout
+            
+            print(f"Stored in cache with key: {cache_key}")  # Debug log
             return Response({
                 "question": question_data['question']
             })
         # verify captcha and create application
         elif request.method == 'POST':
             user_answer = request.data.get('answer')
-            actual_answer = request.session.get('captcha_answer')
-
-            if int(user_answer) == actual_answer:
-                application = UserApplication.objects.create(
-                    account=request.user.account,
-                    captcha_completed=True
+            cache_key = f"captcha_{request.user.id}"
+            cached_data = cache.get(cache_key)
+            
+            print(f"Retrieved from cache: {cached_data}")  # Debug log
+            
+            if not cached_data:
+                return Response(
+                    {"error": "No captcha answer found in session"},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
-                EmailNotifications.notify_user_application_received(request.user)
-                return Response({
-                    "message": "Application submitted successfully",
-                    "application_id": application.id
-                })
+
+            if int(user_answer) == cached_data['answer']:
+                try:
+                    application = UserApplication.objects.create(
+                        account=request.user.account,
+                        captcha_completed=True
+                    )
+                    # Clear the cache after successful verification
+                    cache.delete(cache_key)
+                    
+                    # Try to send email, but don't fail if it doesn't work
+                    try:
+                        EmailNotifications.notify_user_application_received(request.user)
+                    except Exception as email_error:
+                        print(f"Failed to send email notification: {str(email_error)}")
+                        # Continue processing even if email fails
+                    
+                    return Response({
+                        "message": "Application submitted successfully",
+                        "application_id": application.id
+                    })
+                except Exception as e:
+                    return Response(
+                        {"error": f"Failed to create application: {str(e)}"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+                
             return Response(
                 {"error": "Incorrect captcha answer"},
                 status=status.HTTP_400_BAD_REQUEST

@@ -72,19 +72,17 @@ class PayPalDetailsSerializer(serializers.ModelSerializer):
 class ShippingAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShippingAddress
-        fields = ["id", "street_address", "city", "state", "province_territory", "zip", "country"]
+        fields = ["id", "street_address", "address_line_2", "city", "state", "zip", "country"]
     
     def create(self, validated_data):
         return ShippingAddress.objects.create(**validated_data)
     
     def update(self, instance, validated_data):
-        shipping_address_data = validated_data.pop("shipping_address", None)
-        if shipping_address_data:
-            shipping_address = instance.shipping_address
-            for attr in ['street_address', 'city', 'state', 'province_territory', 'zip', 'country']:
-                if attr in shipping_address_data:
-                    setattr(shipping_address, attr, shipping_address_data[attr])
-            shipping_address.save()
+        # Remove the nesting and directly update fields
+        for attr in ['street_address', 'address_line_2', 'city', 'state', 'zip', 'country']:
+            if attr in validated_data:
+                setattr(instance, attr, validated_data[attr])
+        instance.save()
         return instance 
 
 

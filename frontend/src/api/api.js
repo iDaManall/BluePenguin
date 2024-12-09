@@ -68,6 +68,11 @@ const apiFetch = async (endpoint, method = "GET", body = null, token = null) => 
     });
 
     const response = await fetch(`${BASE_URL}${endpoint}`, config);
+
+    // Add these lines to see the raw response
+    const responseText = await response.text();
+    console.log('Raw response text:', responseText);
+
     // Log response safely
     console.log('Response received:', {
       status: response.status,
@@ -78,7 +83,8 @@ const apiFetch = async (endpoint, method = "GET", body = null, token = null) => 
       throw new Error(`API Error: ${response.status}`);
     }
 
-    return response.json();
+    // Only try to parse as JSON if we have content
+    return responseText ? JSON.parse(responseText) : null;
   } catch (error) {
     console.error('API Call Error:', error);
     throw error;
@@ -95,8 +101,22 @@ export const authService = {
 export const accountService = {
   updateSettings: (settingsData, token) => 
       apiFetch(ACCOUNT_ENDPOINTS.UPDATE_SETTINGS, 'PATCH', settingsData, token),
-  setShippingAddress: (addressData, token) => 
-      apiFetch(ACCOUNT_ENDPOINTS.SET_SHIPPING_ADDRESS, 'POST', addressData, token),
+  setShippingAddress: async (addressData, token, method = 'POST') => {
+    try {
+      console.log(`Sending address data to backend using ${method}:`, addressData);
+      const response = await apiFetch(
+        ACCOUNT_ENDPOINTS.SET_SHIPPING_ADDRESS, 
+        method,  // Use the method passed in
+        addressData, 
+        token
+      );
+      console.log('Backend response:', response);
+      return response;
+    } catch (error) {
+      console.error('Shipping address error details:', error);
+      throw error;
+    }
+  },
   setPaypalDetails: (paypalData, token) => 
       apiFetch(ACCOUNT_ENDPOINTS.SET_PAYPAL_DETAILS, 'POST', paypalData, token),
   setCardDetails: (cardData, token) => 
@@ -104,67 +124,118 @@ export const accountService = {
 
   getShippingAddress: async (token) => {
     try {
-      // First get the profile ID from the current user's profile
+      // First get the profile data
       const { data: profile, error: profileError } = await supabase
         .from('api_account')
-        .select('id')
-        .eq('user_id', localStorage.getItem('user_id')) // Add user_id filter
-        .single();
-
-      if (profileError) throw profileError;
-
-      // Then get the shipping address associated with this profile
-      const { data: address, error: addressError } = await supabase
-        .from('api_shippingaddress')
         .select(`
-          street_address,
-          address_line_2,
-          city,
-          state,
-          zip,
-          country
+          id,
+          shipping_address:shipping_address_id (
+            street_address,
+            address_line_2,
+            city,
+            state,
+            zip,
+            country
+          )
         `)
-        .eq('profile_id', profile.id)
-        .limit(1) // Add limit
+        .eq('user_id', localStorage.getItem('user_id'))
         .single();
-
-      if (addressError) {
-        // If no address found, return empty object with expected structure
-        console.log('No address found, returning empty structure');
+  
+      if (profileError) {
+        console.error('Profile error:', profileError);
         return {
-          street: '',
+          street_address: '',
+          address_line_2: '',
           city: '',
           state: '',
-          zipCode: '',
+          zip: '',
           country: ''
         };
       }
-
+  
+      if (!profile?.shipping_address) {
+        console.log('No address found for profile');
+        return {
+          street_address: '',
+          address_line_2: '',
+          city: '',
+          state: '',
+          zip: '',
+          country: ''
+        };
+      }
+  
       // Transform the data to match the component's expected structure
       return {
-        street: `${address.street_address}${address.address_line_2 ? ' ' + address.address_line_2 : ''}`,
-        city: address.city,
-        state: address.state,
-        zipCode: address.zip,
-        country: address.country
+        street_address: profile.shipping_address.street_address,
+        address_line_2: profile.shipping_address.address_line_2,
+        city: profile.shipping_address.city,
+        state: profile.shipping_address.state,
+        zip: profile.shipping_address.zip,
+        country: profile.shipping_address.country
       };
     } catch (error) {
       console.error('Error fetching shipping address:', error);
-      // Return empty structure instead of throwing
       return {
-        street: '',
+        street_address: '',
+        address_line_2: '',
         city: '',
         state: '',
-        zipCode: '',
+        zip: '',
         country: ''
       };
     }
   },
 
+  // viewTransactions: async (token) => {
+  //   try {
+  //     const response = await apiFetch(ACCOUNT_ENDPOINTS.VIEW_TRANSACTIONS, 'GET', null, token);
+  //     return Array.isArray(response) ? response : [];
+  //   } catch (error) {
+  //     console.error('Error fetching transactions:', error);
+  //     return [];
+  //   }
+  // },
   viewTransactions: async (token) => {
     try {
-      const response = await apiFetch(ACCOUNT_ENDPOINTS.VIEW_TRANSACTIONS, 'GET', null, token);
-      return Array.isArray(response) ? response : [];
+      // First get the account ID for the current user
+      const { data: account, error: accountError } = await supabase
+        .from('api_account')
+        .select('id')
+        .eq('user_id', localStorage.getItem('user_id'))
+        .single();
+  
+      if (accountError) throw accountError;
+  
+      // Then get transactions with related bid and profile information
+      const { data: transactions, error: transactionError } = await supabase
+        .from('api_transaction')
+        .select(`
+          bid_id,
+          api_bid!inner (
+            bid_price,
+            time_of_bid,
+            profile_id,
+            api_profile:profile_id (
+              id,
+              display_name
+            )
+          )
+        `)
+        .eq('seller_id', account.id)
+        .order('estimated_delivery', { ascending: false });
+  
+      if (transactionError) throw transactionError;
+  
+      // Transform the data to match the component's expected structure
+      return transactions.map(t => ({
+        id: t.id,
+        amount: t.api_bid.bid_price,
+        date: t.api_bid.time_of_bid ? new Date(t.api_bid.time_of_bid).toLocaleDateString() : 'Pending',
+        account: t.api_bid.api_profile.display_name,
+        profileId: t.api_bid.api_profile.id, // Include this if you want to link to the profile
+        status: t.status
+      }));
     } catch (error) {
       console.error('Error fetching transactions:', error);
       return [];
@@ -203,8 +274,10 @@ export const accountService = {
     apiFetch(ACCOUNT_ENDPOINTS.VIEW_PENDING_BIDS(pk), 'GET', null, token),
   requestQuit: (token) => 
     apiFetch(AUTH_ENDPOINTS.REQUEST_QUIT, 'POST', null, token),
-  applyToBeUser: (token) => 
-    apiFetch(AUTH_ENDPOINTS.APPLY_TO_BE_USER, 'POST', null, token),
+  getArithmeticQuestion: (token) => 
+    apiFetch(AUTH_ENDPOINTS.APPLY_TO_BE_USER, 'GET', null, token),
+  applyToBeUser: (answerData, token) => 
+    apiFetch(AUTH_ENDPOINTS.APPLY_TO_BE_USER, 'POST', answerData, token),
   paySuspensionFine: (token) => 
     apiFetch(AUTH_ENDPOINTS.PAY_SUSPENSION_FINE, 'POST', null, token),
 };

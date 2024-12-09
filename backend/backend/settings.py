@@ -200,6 +200,12 @@ CORS_ALLOW_HEADERS = [
     'x-auth-token',
 ]
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
+
 # Add these settings to ensure preflight requests work correctly
 CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
 CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
