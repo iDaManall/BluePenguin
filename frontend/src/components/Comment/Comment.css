@@ -46,14 +46,33 @@
   }
   
   .comment-actions button {
-    background: none;
-    border: 1px solid #dee2e6;
+    padding: 5px 10px;
+    margin: 0 5px;
+    border: 1px solid #ddd;
+    background: white;
     border-radius: 4px;
-    padding: 4px 8px;
     cursor: pointer;
+    transition: all 0.2s ease;
   }
   
-  .comment-actions button:hover {
-    background: #e9ecef;
+  .comment-actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .comment-actions button.active {
+    background: #6cb1fc;
+    color: white;
+    border-color: #0056b3;
+  }
+  
+  .like-btn.active {
+    background: #28a745;
+    border-color: #28a745;
+  }
+  
+  .dislike-btn.active {
+    background: #dc3545;
+    border-color: #dc3545;
   }
   

@@ -131,7 +131,7 @@ const Navbar = () => {
             </div>
           )}
         </div>
-        <Link to="/cart" className="cart-icon">
+        <Link to="/orders" className="cart-icon">
           <img src="/cart-icon.png" alt="Cart" />
         </Link>
       </div>

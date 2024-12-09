@@ -51,12 +51,12 @@ export const checkPermissions = {
         user.id !== comment.user.id
     ),
 
-    // Save Actions
-    canSaveItem: (user, item) => (
-        !!user &&
-        user.status !== 'VISITOR' && 
-        user.id !== item.seller.id
-    ),
+    // Save Actions ///---////----///
+    canSaveItem: (user, item) => {
+        if (!user || !item) return false;
+        const sellerId = item?.profile?.account?.user?.user_id;
+        return user.status !== 'VISITOR' && user.id !== sellerId;
+    },
 
     // Transaction Actions
     canMarkAsShipped: (user, transaction) => (

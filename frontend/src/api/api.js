@@ -1,24 +1,3 @@
-// import axios from "axios";
-// import { ACCESS_TOKEN } from "./constants";
-
-// const api = axios.create({
-//     baseURL: import.meta.env.VITE_API_URL
-// })
-
-// api.interceptors.request.use(
-//     // accept config, look inside our local storage and see if we have access token
-//     (config) => {
-//         const token = localStorage.getItem(ACCESS_TOKEN);
-//         if (token) {
-//             config.headers.Authorization = `Bearer ${token}`
-//         }
-//         return config
-//     },
-//     (error) => {
-//         return Promise.reject(error)
-//     }
-// )
-
 import { AUTH_ENDPOINTS, ACCOUNT_ENDPOINTS, PROFILE_ENDPOINTS, ITEM_ENDPOINTS, TRANSACTION_ENDPOINTS, EXPLORE_ENDPOINTS } from './endpoints';
 import { supabase } from '../utils/client';
 
@@ -274,23 +253,8 @@ export const itemService = {
     }
   },
 
-  getItem: async (id) => {
-    try {
-      const { data, error } = await supabase
-        .from('api_item')
-        .select(`
-          *,
-          api_profile:profile_id (*)
-        `)
-        .eq('id', id)
-        .single();
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error fetching item:', error);
-      throw error;
-    }
-  },
+  getItem: (pk, token) => 
+    apiFetch(`${ITEM_ENDPOINTS.VIEW}/${pk}`, 'GET', null, token),
   
   deleteItem: (pk, token) => 
     apiFetch(ITEM_ENDPOINTS.DELETE(pk), 'DELETE', null, token),
@@ -384,14 +348,80 @@ export const itemService = {
   dislikeComment: (pk, commentId, token) => 
     apiFetch(ITEM_ENDPOINTS.DISLIKE_COMMENT(pk), 'POST', { commentId }, token),
 
-  performBid: (pk, bidData, token) => 
-    apiFetch(ITEM_ENDPOINTS.PERFORM_BID(pk), 'POST', bidData, token),
+  performBid: (pk, bidData, token) => {
+    const formattedBidData = {
+      bid_price: parseFloat(bidData.bid_price),
+      profile: bidData.profile,
+      item: bidData.item
+    };
+    
+    return apiFetch(`/api/items/${pk}/perform-bid/`, 'POST', formattedBidData, token);
+  },
   changeDeadline: (pk, deadlineData, token) => 
     apiFetch(ITEM_ENDPOINTS.CHANGE_DEADLINE(pk), 'PATCH', deadlineData, token),
   viewItemBids: (pk, token) => 
     apiFetch(ITEM_ENDPOINTS.VIEW_ITEM_BIDS(pk), 'GET', null, token),
   chooseWinner: (pk, winnerData, token) => 
     apiFetch(ITEM_ENDPOINTS.CHOOSE_WINNER(pk), 'POST', winnerData, token),
+
+  getPendingBids: async (token) => {
+    try {
+      const { data, error } = await supabase
+        .from('api_bid')
+        .select(`
+          *,
+          item:item_id (
+            *,
+            profile:profile_id (
+              *,
+              account:account_id (
+                user:user_id (
+                  username,
+                  email
+                )
+              )
+            )
+          )
+        `)
+        .eq('status', 'ACT')
+        .eq('winner_status', 'I')
+        .order('time_of_bid', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching pending bids:', error);
+      throw error;
+    }
+  },
+
+  getSavedItems: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('api_save')
+        .select(`
+          *,
+          item:item_id (
+            *,
+            profile:profile_id (
+              *,
+              account:account_id (
+                user:user_id (
+                  username
+                )
+              )
+            )
+          )
+        `)
+        .order('time_saved', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching saved items:', error);
+      throw error;
+    }
+  }
 };
 
 export const transactionService = {

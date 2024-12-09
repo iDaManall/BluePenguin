@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@supabase/supabase-js": "^2.46.2"
+    "@supabase/supabase-js": "^2.46.2",
+    "react-toastify": "^10.0.6"
   }
 }

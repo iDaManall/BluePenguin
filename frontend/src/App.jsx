@@ -14,6 +14,9 @@ import ApplyUser from "./pages/Auth/ApplyUser";
 import EditProfile from "./pages/Profile/EditProfile";
 import PaymentsAndAddress from "./pages/PaymentsAndAddress/PaymentsAndAddress";
 import Orders from "./pages/orders/orders";
+import Requests from "./pages/Requests/Requests";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // clear refresh and access token when we log out, navigate to login page
 function Logout(){
@@ -50,7 +53,9 @@ function App() {
           <Route path="/apply-user" element={<ApplyUser />} />
           <Route path="/payments" element={<PaymentsAndAddress />} />
           <Route path="/orders" element={<Orders />} />
+          <Route path="/requests" element={<Requests />} />
         </Routes>
+        <ToastContainer position="top-right" autoClose={3000} />
       </BrowserRouter>
     </AuthProvider>
   )
