@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
+import { accountService, profileService, permissionsService } from '../../api/api';
 import './Requests.css';
 
 const Requests = () => {
@@ -22,7 +23,7 @@ const Requests = () => {
     const checkSuspensionStatus = async () => {
       try {
         if (!profile) return;
-        const { data, error } = await requestService.checkSuspensionStatus();
+        const { data, error } = await permissionsService.checkSuspensionStatus(localStorage.getItem('user_id'));
         if (error) throw error;
         setIsSuspended(data.is_suspended);
       } catch (error) {
@@ -37,7 +38,7 @@ const Requests = () => {
   const handleSubmitComplaint = async (e) => {
     e.preventDefault();
     try {
-      await requestService.fileComplaint({
+      await profileService.reportUser({
         offender_username: formData.offenderUsername,
         description: formData.description
       });
@@ -53,7 +54,7 @@ const Requests = () => {
     e.preventDefault();
     try {
       const reason = formData.reason === 'other' ? formData.otherReason : formData.reason;
-      await requestService.requestQuit({
+      await accountService.requestQuit({
         username: formData.username,
         password: formData.password,
         reason: reason
@@ -68,7 +69,7 @@ const Requests = () => {
 
   const handlePaySuspensionFine = async () => {
     try {
-      await requestService.paySuspensionFine();
+      await accountService.paySuspensionFine();
       setIsSuspended(false);
       toast.success('Suspension fine paid successfully');
     } catch (error) {
@@ -92,12 +93,13 @@ const Requests = () => {
     try {
       switch(option) {
         case 'quit':
-          await api.requestQuit(token);
+          await accountService.requestQuit({ token });
+          toast.success('Quit request submitted');
           navigate('/login');
           break;
         case 'suspension':
           if (isSuspended) {
-            await api.paySuspensionFine(token);
+            await accountService.paySuspensionFine({ token });
             setIsSuspended(false);
           }
           break;

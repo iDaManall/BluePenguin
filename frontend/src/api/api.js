@@ -545,4 +545,22 @@ export const exploreService = {
   }
 };
 
+export const permissionsService = {
+  checkSuspensionStatus: async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from('api_account')
+        .select('is_suspended')
+        .eq('user_id', userId)
+        .single();
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error checking suspension status:', error);
+      return { data: null, error };
+    }
+  },
+  // Add other permissions-related functions here
+};
+
 export default apiFetch; // Export the function to be used elsewhere in the app
