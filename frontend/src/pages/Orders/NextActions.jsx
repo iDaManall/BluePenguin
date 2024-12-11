@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../utils/client';
 import { toast } from 'react-toastify';
 import './Orders.css';
-import axios from 'axios';
+import { itemService } from '../../api/api';
 
 
 const NextActions = ({ items }) => {
@@ -12,22 +12,21 @@ const NextActions = ({ items }) => {
 
   const handleAcceptWinner = async (item) => {
     try {
-      const response = await axios.post(
-        `/api/items/${item.id}/choose-winner/`,
+      const token = localStorage.getItem('access_token');
+      const response = await itemService.chooseWinner(
+        item.id, 
         { id: item.highestBid.id },
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-          }
-        }
+        token
       );
 
-      if (response.status === 200) {
+      if (response) {
         toast.success('Winner accepted! Transaction completed.');
+        // Optionally refresh the data
+        window.location.reload();
       }
     } catch (error) {
       console.error('Error accepting winner:', error);
-      toast.error(error.response?.data?.error || 'Failed to accept winner');
+      toast.error('Failed to accept winner');
     }
   };
 
@@ -49,25 +48,21 @@ const NextActions = ({ items }) => {
 
   const handleShipItem = async (item) => {
     try {
-      const response = await axios.post(
-        `/api/transactions/${item.transaction_id}/ship/`,
-        {},
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-          }
-        }
-      );
+      const token = localStorage.getItem('access_token');
+      const response = await transactionService.shipItem(item.transaction_id, token);
 
-      if (response.status === 200) {
+      if (response) {
         toast.success('Item marked as shipped!');
+        // Optionally refresh the data
+        window.location.reload();
       }
     } catch (error) {
       console.error('Error marking item as shipped:', error);
-      toast.error(error.response?.data?.error || 'Failed to mark item as shipped');
+      toast.error('Failed to mark item as shipped');
     }
   };
 
+  
   return (
     <div className="next-actions">
       <h2>Next Actions</h2>
