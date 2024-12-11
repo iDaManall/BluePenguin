@@ -7,6 +7,7 @@ import './Requests.css';
 
 const Requests = () => {
   const navigate = useNavigate();
+  const { token } = localStorage.getItem('access_token');
   const { user, profile } = useAuth();
   const [isSuspended, setIsSuspended] = useState(false);
   const [activeOption, setActiveOption] = useState('complaint');
@@ -38,10 +39,11 @@ const Requests = () => {
   const handleSubmitComplaint = async (e) => {
     e.preventDefault();
     try {
-      await profileService.reportUser({
-        offender_username: formData.offenderUsername,
-        description: formData.description
-      });
+      // edit api later
+      // await profileService.reportUser({
+      //   offender_username: formData.offenderUsername,
+      //   description: formData.description
+      // });
       toast.success('Complaint submitted successfully');
       setFormData({ ...formData, offenderUsername: '', description: '' });
     } catch (error) {
@@ -54,11 +56,12 @@ const Requests = () => {
     e.preventDefault();
     try {
       const reason = formData.reason === 'other' ? formData.otherReason : formData.reason;
-      await accountService.requestQuit({
-        username: formData.username,
-        password: formData.password,
-        reason: reason
-      });
+      // edit api 
+      // await accountService.requestQuit({
+      //   username: formData.username,
+      //   password: formData.password,
+      //   reason: reason
+      // });
       toast.success('Quit request submitted successfully');
       navigate('/login');
     } catch (error) {
@@ -69,7 +72,12 @@ const Requests = () => {
 
   const handlePaySuspensionFine = async () => {
     try {
-      await accountService.paySuspensionFine();
+      const balance = await accountService.viewBalance(localStorage.getItem('user_id'));
+      if (balance < 50) {
+        toast.error('Insufficient balance to pay suspension fine');
+      }
+
+      await accountService.paySuspensionFine(token);
       setIsSuspended(false);
       toast.success('Suspension fine paid successfully');
     } catch (error) {
@@ -287,7 +295,7 @@ const Requests = () => {
             {isSuspended && (
               <button 
                 className="submit-btn"
-                onClick={() => handleOptionClick('suspension')}
+                onClick={() => handlePaySuspensionFine('suspension')}
               >
                 Pay Fine
               </button>

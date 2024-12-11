@@ -494,7 +494,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='pay-suspension-fine')
     def pay_suspension_fine(self, request, pk=None):
         account = request.user.account
-        account.balance -= 50.00
+        account.balance -= Decimal('50.00')
         account.is_suspended = False
         account.suspension_fine_paid = True
         account.save() 
