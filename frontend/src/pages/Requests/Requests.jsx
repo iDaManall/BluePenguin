@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../api/api';
+import { useAuth } from '../../context/AuthContext';
+import { toast } from 'react-toastify';
 import './Requests.css';
 
 const Requests = () => {
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
   const [isSuspended, setIsSuspended] = useState(false);
   const [activeOption, setActiveOption] = useState('complaint');
   const [formData, setFormData] = useState({
@@ -19,16 +21,61 @@ const Requests = () => {
   useEffect(() => {
     const checkSuspensionStatus = async () => {
       try {
-        const token = localStorage.getItem('access_token');
-        const response = await api.getUserProfile(token);
-        setIsSuspended(response.is_suspended);
+        if (!profile) return;
+        const { data, error } = await requestService.checkSuspensionStatus();
+        if (error) throw error;
+        setIsSuspended(data.is_suspended);
       } catch (error) {
         console.error('Error checking suspension status:', error);
+        toast.error('Failed to check suspension status');
       }
     };
 
     checkSuspensionStatus();
-  }, []);
+  }, [profile]);
+
+  const handleSubmitComplaint = async (e) => {
+    e.preventDefault();
+    try {
+      await requestService.fileComplaint({
+        offender_username: formData.offenderUsername,
+        description: formData.description
+      });
+      toast.success('Complaint submitted successfully');
+      setFormData({ ...formData, offenderUsername: '', description: '' });
+    } catch (error) {
+      console.error('Error submitting complaint:', error);
+      toast.error('Failed to submit complaint');
+    }
+  };
+
+  const handleQuitSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const reason = formData.reason === 'other' ? formData.otherReason : formData.reason;
+      await requestService.requestQuit({
+        username: formData.username,
+        password: formData.password,
+        reason: reason
+      });
+      toast.success('Quit request submitted successfully');
+      navigate('/login');
+    } catch (error) {
+      console.error('Error submitting quit request:', error);
+      toast.error('Failed to submit quit request');
+    }
+  };
+
+  const handlePaySuspensionFine = async () => {
+    try {
+      await requestService.paySuspensionFine();
+      setIsSuspended(false);
+      toast.success('Suspension fine paid successfully');
+    } catch (error) {
+      console.error('Error paying suspension fine:', error);
+      toast.error('Failed to pay suspension fine');
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -62,23 +109,6 @@ const Requests = () => {
     }
   };
 
-  const handleQuitSubmit = async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem('access_token');
-    
-    try {
-      const reason = formData.reason === 'other' ? formData.otherReason : formData.reason;
-      await api.requestQuit(token, { 
-        username: formData.username,
-        password: formData.password,
-        reason: reason
-      });
-      navigate('/login');
-    } catch (error) {
-      console.error('Error submitting quit request:', error);
-    }
-  };
-
   return (
     <div className="requests-page">
       <h1>Requests</h1>
@@ -107,7 +137,7 @@ const Requests = () => {
         </div>
 
         {activeOption === 'complaint' && (
-          <form className="complaint-form">
+          <form className="complaint-form" onSubmit={handleSubmitComplaint}>
             <div className="form-group">
               <label>Your Username</label>
               <input

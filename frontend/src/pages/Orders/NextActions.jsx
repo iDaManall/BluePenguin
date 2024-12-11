@@ -3,31 +3,31 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../utils/client';
 import { toast } from 'react-toastify';
 import './Orders.css';
+import axios from 'axios';
+
 
 const NextActions = ({ items }) => {
   const navigate = useNavigate();
+  
 
   const handleAcceptWinner = async (item) => {
     try {
-      const { error } = await supabase
-        .from('api_bid')
-        .update({ winner_status: 'W' })
-        .eq('id', item.highestBid.id);
+      const response = await axios.post(
+        `/api/items/${item.id}/choose-winner/`,
+        { id: item.highestBid.id },
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          }
+        }
+      );
 
-      if (error) throw error;
-
-      // Update item status
-      const { error: itemError } = await supabase
-        .from('api_item')
-        .update({ status: 'SOLD' })
-        .eq('id', item.id);
-
-      if (itemError) throw itemError;
-
-      toast.success('Winner accepted! Please proceed with shipping.');
+      if (response.status === 200) {
+        toast.success('Winner accepted! Transaction completed.');
+      }
     } catch (error) {
       console.error('Error accepting winner:', error);
-      toast.error('Failed to accept winner');
+      toast.error(error.response?.data?.error || 'Failed to accept winner');
     }
   };
 
@@ -49,16 +49,22 @@ const NextActions = ({ items }) => {
 
   const handleShipItem = async (item) => {
     try {
-      const { error } = await supabase
-        .from('api_item')
-        .update({ status: 'SHIPPED' })
-        .eq('id', item.id);
+      const response = await axios.post(
+        `/api/transactions/${item.transaction_id}/ship/`,
+        {},
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          }
+        }
+      );
 
-      if (error) throw error;
-      toast.success('Item marked as shipped!');
+      if (response.status === 200) {
+        toast.success('Item marked as shipped!');
+      }
     } catch (error) {
       console.error('Error marking item as shipped:', error);
-      toast.error('Failed to mark item as shipped');
+      toast.error(error.response?.data?.error || 'Failed to mark item as shipped');
     }
   };
 

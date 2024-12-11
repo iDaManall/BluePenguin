@@ -366,6 +366,11 @@ export const itemService = {
           availability,
           collection_id
         `);
+
+      // Add search filter if search term is provided
+      if (searchParams.search) {
+        query = query.or(`title.ilike.%${searchParams.search}%,description.ilike.%${searchParams.search}%`);
+      }
       // Add filters based on the searchParams
       if (searchParams.availability) {
         query = query.eq('availability', 'A');
@@ -391,10 +396,9 @@ export const itemService = {
       if (searchParams.limit) {
         query = query.limit(searchParams.limit);
       }
+      
       const { data, error } = await query;
-      
       if (error) throw error;
-      
       return { results: data };
     } catch (error) {
       console.error('Error fetching items:', error);
