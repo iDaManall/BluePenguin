@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Login from '../pages/Auth/Login';
 import Register from '../pages/Auth/Register';
 import './Navbar.css';
@@ -11,6 +11,8 @@ const Navbar = () => {
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const dropdownRef = useRef(null);
   const categoryRef = useRef(null);
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
 
   // console logs if debugging needed
   // console.log('Current user:', user);
@@ -51,6 +53,13 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
+    }
+  };
+
   return (
     <nav className="navbar">
       <div className="navbar-left">
@@ -83,16 +92,18 @@ const Navbar = () => {
       </div>
       
 
-      <div className="search-container">
+      <form className="search-container" onSubmit={handleSearch}>
         <input
           type="text"
           placeholder="What would you like to find?"
           className="search-input"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <button className="search-button">
+        <button type="submit" className="search-button">
           <img src="/search-icon.png" alt="Search" className="search-icon" />
         </button>
-      </div>
+      </form>
 
       <div className="navbar-right">
         <div className="account-dropdown" ref={dropdownRef}>
@@ -105,7 +116,7 @@ const Navbar = () => {
           {isDropdownOpen && (
             <div className="dropdown-menu">
               <div className="dropdown-section">
-                <Link to="/profile">Profile</Link>
+                <Link to={`/profile/${user?.profile_id || ''}`}>Profile</Link>
                 <Link to="/account/settings">Account Setting</Link>
                 <Link to="/payments">Payments / Address</Link>
 

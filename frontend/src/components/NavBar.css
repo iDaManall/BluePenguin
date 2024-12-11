@@ -32,31 +32,50 @@
   margin: 0 2rem;
   position: relative;
   display: flex;
+  align-items: center;
 }
 
 .search-input {
   width: 100%;
-  padding: 0.8rem 1rem;
+  padding: 0.8rem 2.5rem 0.8rem 1rem;
   border: 1px solid #ddd;
   border-radius: 25px;
   font-size: 1rem;
-  padding-right: 3rem;
+  outline: none;
 }
 
-.search-button {
+/* Make the search button selector more specific */
+.search-container .search-button {
   position: absolute;
-  right: 0.5rem;
+  right: 8px;
   top: 50%;
   transform: translateY(-50%);
-  background: none;
-  border: none;
+  background: none !important; /* Override any other styles */
+  border: none !important;
   cursor: pointer;
-  padding: 0.5rem;
+  padding: 8px;
+  width: auto !important; /* Override any width settings */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  min-width: unset !important; /* Override any min-width */
+  max-width: unset !important; /* Override any max-width */
 }
 
-.search-icon {
-  width: 20px;
-  height: 20px;
+.search-container .search-button:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.search-container .search-icon {
+  width: 18px;
+  height: 18px;
+  opacity: 0.6;
+}
+
+.search-container .search-button:hover .search-icon {
+  opacity: 0.8;
 }
 
 /* Navbar Right Section */
