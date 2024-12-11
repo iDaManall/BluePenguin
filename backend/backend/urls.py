@@ -25,4 +25,5 @@ urlpatterns = [
     path("api/token/", TokenObtainPairView.as_view(), name="get_token"), # linked TokenObtainPairView view
     path("api/token/refresh/", TokenRefreshView.as_view(), name="refresh"), # linked TokenRefreshView view
     path("api-auth/", include("rest_framework.urls")), # linked all of the prebuilt urls we need from rest framework
+    path('api/accounts/accept-win/', AccountViewSet.as_view({'post': 'accept_win'}), name='accept-win'),
 '''
