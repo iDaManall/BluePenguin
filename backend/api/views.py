@@ -384,7 +384,7 @@ class AccountViewSet(viewsets.ModelViewSet):
             transaction = Transaction.objects.create(
                 seller=seller_account,
                 buyer=buyer_account,
-                bid=winning_bid
+                bid=winning_bid 
             )
 
             seller_account.check_vip_eligibility()
@@ -1159,7 +1159,29 @@ class ItemViewSet(viewsets.ModelViewSet):
                         "error": "Bid not found."
                     }, status=status.HTTP_404_NOT_FOUND
                 )
-        
+
+            seller_account = item.profile.account
+            buyer_account = winning_bid.profile.account
+
+            complete_transaction(
+                seller=seller_account,
+                buyer=buyer_account,
+                amount=winning_bid.bid_price
+            )
+
+            buyer_account.get_VIP_discount()
+            buyer_account.update_points(winning_bid.bid_price)
+
+            transaction = Transaction.objects.create(
+                seller=seller_account,
+                buyer=buyer_account,
+                bid=winning_bid,
+            )
+
+            seller_account.check_vip_eligibility()
+            buyer_account.check_vip_eligibility()
+
+            item.availability = SOLD_CHOICE
             item.winning_bid = winning_bid
             item.save()
 
@@ -1172,7 +1194,7 @@ class ItemViewSet(viewsets.ModelViewSet):
                 winning_bid.bid_price,
             )
 
-            serializer = BidSerializer(winning_bid)
+            serializer = TransactionSerializer(transaction)
 
             return Response(serializer.data, status=status.HTTP_200_OK)
         
