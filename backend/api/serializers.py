@@ -35,7 +35,7 @@ class NoteSerializer(serializers.ModelSerializer):
 class CardDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CardDetails
-        fields = ["id", "card_number", "card_holder_name", "expire_month", "expire_year", "cvv"]
+        fields = ["card_number", "card_holder_name", "expire_month", "expire_year", "cvv"]
     
     def create(self, validated_data):
         return CardDetails.objects.create(**validated_data)
@@ -54,7 +54,7 @@ class CardDetailsSerializer(serializers.ModelSerializer):
 class PayPalDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = PayPalDetails
-        fields = ["id", "paypal_email"]
+        fields = ["paypal_email"]
     
     def create(self, validated_data):
         return PayPalDetails.objects.create(**validated_data)
@@ -72,17 +72,19 @@ class PayPalDetailsSerializer(serializers.ModelSerializer):
 class ShippingAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShippingAddress
-        fields = ["id", "street_address", "address_line_2", "city", "state", "zip", "country"]
+        fields = ["street_address", "city", "state", "province_territory", "zip", "country"]
     
     def create(self, validated_data):
         return ShippingAddress.objects.create(**validated_data)
     
     def update(self, instance, validated_data):
-        # Remove the nesting and directly update fields
-        for attr in ['street_address', 'address_line_2', 'city', 'state', 'zip', 'country']:
-            if attr in validated_data:
-                setattr(instance, attr, validated_data[attr])
-        instance.save()
+        shipping_address_data = validated_data.pop("shipping_address", None)
+        if shipping_address_data:
+            shipping_address = instance.shipping_address
+            for attr in ['street_address', 'city', 'state', 'province_territory', 'zip', 'country']:
+                if attr in shipping_address_data:
+                    setattr(shipping_address, attr, shipping_address_data[attr])
+            shipping_address.save()
         return instance 
 
 
@@ -92,6 +94,8 @@ class RegisterSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=20, write_only=True)
     first_name = serializers.CharField()
     last_name = serializers.CharField()
+    display_name = serializers.CharField(required=False)
+    description = serializers.CharField(required=False)
 
     def create(self, validated_data):
         supabase_user = None
@@ -102,50 +106,47 @@ class RegisterSerializer(serializers.Serializer):
                 settings.SUPABASE_SERVICE_ROLE_KEY,
             )
 
-            print("Creating Supabase user...")
-            supabase_response = supabase.auth.admin.create_user({
+            print("Creating Supabase user...")  # Debug print
+            supabase_user = supabase.auth.admin.create_user({
                 'email': validated_data['email'],
                 'password': validated_data['password'],
                 'email_confirm': True
             })
-            # Convert generator to user data
-            supabase_user = next(iter(supabase_response))
-            print(f"Supabase user created: {supabase_user}")
+            print(f"Supabase user created: {supabase_user}")  # Debug print
 
-            # Use transaction to ensure all Django models are created or none
-            with transaction.atomic():
-                print("Creating Django user...")
-                user = User.objects.create_user(
-                    username=validated_data["username"],
-                    email=validated_data["email"],
-                    password=validated_data["password"],  # create_user handles password hashing
-                    first_name=validated_data["first_name"],
-                    last_name=validated_data["last_name"]
-                )
-                print(f"Django user created: {user}")
+            print("Creating Django user...")  # Debug print
+            # Create Django user
+            user = User.objects.create_user(
+                username=validated_data["username"],
+                email=validated_data["email"],
+                first_name=validated_data["first_name"],
+                last_name=validated_data["last_name"]
+            )
+            user.set_password(validated_data["password"])
+            user.save()
+            print(f"Django user created: {user}")  # Debug print
 
-                print("Creating Account and Profile...")
-                account = Account.objects.create(user=user)
-                
-                display_name = f"{validated_data['first_name']} {validated_data['last_name']}"
-                profile = Profile.objects.create(
-                    account=account,
-                    display_name=display_name,
-                    description=""
-                )
-                print("Account and Profile created")
+            print("Creating Account and Profile...")  # Debug print
+            # Create Account and Profile
+            account = Account.objects.create(user=user)
+            profile = Profile.objects.create(
+                account=account,
+                display_name=validated_data.get("display_name") or user.get_full_name(),
+                description=validated_data.get("description")
+            )
+            print("Account and Profile created")  # Debug print
 
-                return user
+            return user
 
         except Exception as e:
-            print(f"Error occurred: {str(e)}")
+            print(f"Error occurred: {str(e)}")  # Debug print
             if supabase_user:
                 try:
-                    print("Attempting to delete Supabase user...")
-                    supabase.auth.admin.delete_user(supabase_user.user.id)  # Access the ID correctly
-                    print("Supabase user deleted")
+                    print("Attempting to delete Supabase user...")  # Debug print
+                    supabase.auth.admin.delete_user(supabase_user.id)
+                    print("Supabase user deleted")  # Debug print
                 except Exception as cleanup_error:
-                    print(f"Failed to delete Supabase user: {str(cleanup_error)}")
+                    print(f"Failed to delete Supabase user: {str(cleanup_error)}")  # Debug print
             raise serializers.ValidationError(f"Failed to create user: {str(e)}")
 
     
@@ -161,7 +162,7 @@ class AccountSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Account
-        fields = ["id", "first_name", "last_name", "username", "status", "email", "balance", "password"]
+        fields = ["first_name", "last_name", "username", "status", "email", "balance", "password"]
         extra_kwargs = {
             "status": {"read_only":True}, 
             "balance": {"read_only": True}, 
@@ -170,8 +171,7 @@ class AccountSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         # extract the data from User model
-        user_data = validated_data.pop('user', {})
-        password = user_data.pop("password", None)
+        password = validated_data.pop("password", None)
         # update password separately since it's hashed
         user = instance.user # here, user is the instance of the User model
         if password:
@@ -179,8 +179,8 @@ class AccountSerializer(serializers.ModelSerializer):
 
         # update account settings
         for attr in ['first_name', 'last_name', 'username', 'email']:
-            if attr in user_data:
-                setattr(instance.user, attr, user_data[attr])
+            if attr in validated_data:
+                setattr(instance.user, attr, validated_data['user'][attr])
         
         # save everything
         user.save()
@@ -199,47 +199,38 @@ class ProfileSerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(source="account.user.username", read_only=True)
     display_icon = serializers.ImageField(required=False)
     average_rating = serializers.SerializerMethodField()
-    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
-        fields = ['id', 'display_name', 'display_icon', 'description', 'average_rating', 'username', 'slug', 'status']
+        fields = ['display_name', 'display_icon', 'description', 'average_rating', 'username', 'slug']
         extra_kwargs = {
             "average_rating": {"read_only": True},
-            "username": {"read_only": True},
-            "status": {"read_only": True},
+            "username": {"read_only": True}
         }
     
     # you can edit display name, display icon, and description
     def update(self, instance, validated_data):
         for attr in ['display_name', 'display_icon', 'description']:
             if attr in validated_data:
-                if attr == 'display_icon':
-                    display_icon = validated_data['display_icon']
-                    destination_blob_name = f"profile_pics/{instance.account.user.username}/{display_icon.name}"
-                    url = upload_to_gcs(display_icon, destination_blob_name)
-                    setattr(instance, attr, url)
-                else:
-                 setattr(instance, attr, validated_data[attr])
+                setattr(instance, attr, validated_data[attr])
                 # setattr(object, name, value)
                 # object - object whose attribute is to be set
                 # name - attribute name as string
                 # value - value to set for the attribute
                 # e.g. setattr(obj, 'x', 123) is equivalent to obj.x = 123
         
+        # uploading display icon
+        if 'display_icon' in validated_data:
+            display_icon = validated_data['display_icon']
+            destination_blob_name = f"profile-pics/{instance.account.user.username}/{display_icon.name}"
+            url = upload_to_gcs(display_icon, destination_blob_name)
+            instance.display_icon = url
+        
         instance.save()
         return instance
     
     def get_average_rating(self, obj):
         return obj.average_rating
-    
-    def get_status(self, obj):
-        if obj.account.status == STATUS_USER:
-            return 'USER'
-        elif obj.account.status == STATUS_VIP:
-            return 'VIP'
-        elif obj.account.status == STATUS_VISITOR:
-            return 'VISITOR'
 
 
 class RatingSerializer(serializers.ModelSerializer):
@@ -261,26 +252,24 @@ class RatingSerializer(serializers.ModelSerializer):
     
 
 class ItemSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(required=False, source="profile.account.user.username")
-    display_icon = serializers.ImageField(required=False, source="profile.display_icon")
-    image_urls = serializers.ListField(write_only=True, required=False)
+    username = serializers.CharField(source="profile.account.user.username")
+    display_icon = serializers.ImageField(source="profile.display_icon")
+    images = serializers.ListField(write_only=True, required=False)
 
     class Meta:
         model = Item
-        fields = ['id', 'title', 'username', 'display_icon', 'description', 'deadline', 'collection', 'image_urls', 'selling_price', 'profile', 'maximum_bid', 'minimum_bid']
+        fields = ['title', 'username', 'display_icon', 'description', 'deadline', 'collection', 'images', 'selling_price', 'profile']
         extra_kwargs = {
             "username": {"read_only": True},
             "display_icon": {"read_only": True}
         }
 
     def create(self, validated_data):
-        # Remove extra fields before creating the item
-        validated_data.pop('username', None)
-        validated_data.pop('display_icon', None)
         title = validated_data.pop("title")
         user = self.context['request'].user # the current user handling the request
         profile = user.account.profile
         files = validated_data.pop('images', [])
+
         validated_data['profile'] = profile
 
         description = validated_data.pop("description")
@@ -292,8 +281,7 @@ class ItemSerializer(serializers.ModelSerializer):
 
         gcs_urls = []
         for file in files:
-            folder_name = item.title.lower().replace(" ", "")
-            destination_blob_name = f"items/{folder_name}/{file.name}"
+            destination_blob_name = f"items/{user.username}/{file.name}"
             url = upload_to_gcs(file, destination_blob_name)
             gcs_urls.append(url)
         
@@ -363,7 +351,7 @@ class SaveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Save
-        fields = ['id', 'item', 'profile', 'time_saved', 'image_urls', 'title', 'current_bid']
+        fields = ['item', 'profile', 'time_saved', 'image_urls', 'title', 'current_bid']
         extra_kwargs = {
             "item": {"read_only": True},
             "profile": {"read_only": True},
@@ -388,7 +376,7 @@ class SaveSerializer(serializers.ModelSerializer):
 class ReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Report
-        fields = ['id', 'reporter', 'reportee', 'report']
+        fields = ['reporter', 'reportee', 'report']
         extra_kwargs = {
             "reporter": {"read_only": True},
             "reportee": {"read_only": True},
@@ -407,7 +395,7 @@ class ReportSerializer(serializers.ModelSerializer):
 class LikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Like
-        fields = ['id', 'profile', 'comment']
+        fields = ['profile', 'comment']
         extra_kwargs = {
             'profile': {'read_only': True},
             'comment': {'read_only': True},
@@ -428,7 +416,7 @@ class LikeSerializer(serializers.ModelSerializer):
 class DislikeSerializer(serializers.ModelSerializer):
     class Meta: 
         model = Dislike
-        fields = ['id', 'profile', 'comment']
+        fields = ['profile', 'comment']
         extra_kwargs = {
             'profile': {'read_only': True},
             'comment': {'read_only': True},
@@ -475,7 +463,7 @@ class TransactionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Transaction
-        fields = ['id', 'seller_username', 'buyer_username', 'bid', 'item_title', 'bid_amount', 'status', 'estimated_delivery', 'carrier', 'shipping_cost', 'image_urls']
+        fields = ['id', 'seller_username', 'buyer_username', 'item_title', 'bid_amount', 'status', 'estimated_delivery', 'carrier', 'shipping_cost']
         extra_kwargs = {
             'status': {'read_only': True},  
             'estimated_delivery': {'read_only': True}, 
@@ -486,7 +474,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 class ParcelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Parcel
-        fields = ['id', 'item', 'length', 'width', 'height', 'weight', 'distance_unit', 'weight_unit']
+        fields = ['item', 'length', 'width', 'height', 'weight', 'distance_unit', 'weight_unit']
         extra_kwargs = {
             "item": {"read_only": True}
         }
@@ -497,28 +485,29 @@ class ParcelSerializer(serializers.ModelSerializer):
         validated_data['transaction'] = transaction
         parcel = Parcel.objects.create(**validated_data)
         return parcel 
-    
+
 class QuitRequestSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source='account.user.username', read_only=True)
-    email = serializers.CharField(source='account.user.email', read_only=True)
+    username = serializers.CharField(read_only=True)
+    email = serializers.EmailField(read_only=True)
+    reason = serializers.CharField(required=True)
+    account = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         model = QuitRequest
-        fields = ['id', 'username', 'email', 'reason', 'status']
-        extra_kwargs = {
-            "username": {"read_only": True},
-            "email": {"read_only": True},
-            "status": {"read_only": True},
-        }
+        fields = ['id', 'account', 'username', 'email', 'reason', 'status', 'created_at']
+        read_only_fields = ['id', 'status', 'created_at']
 
     def create(self, validated_data):
-        username = self.context['username']
-        email = self.context['email']
-        reason = self.context['reason']
-
-        validated_data['username'] = username
-        validated_data['email'] = email
-        validated_data['reason'] = reason
-
-        quitrequest = QuitRequest.objects.create(**validated_data)
-
-        return quitrequest
+        request = self.context.get('request')
+        username = self.context.get('username')
+        email = self.context.get('email')
+        
+        quit_request = QuitRequest.objects.create(
+            account=request.user.account,
+            username=username,
+            email=email,
+            reason=validated_data['reason'],
+            status=REQUEST_PENDING_CHOICE
+        )
+        
+        return quit_request
