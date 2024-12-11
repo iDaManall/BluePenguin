@@ -315,8 +315,17 @@ class Parcel(models.Model):
 
 class QuitRequest(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    username = models.CharField(max_length=150)
+    email = models.EmailField()
     reason = models.TextField(max_length=1000)
     status = models.CharField(max_length=1, choices=REQUEST_STATUS_CHOICES, default=REQUEST_PENDING_CHOICE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Quit Request by {self.username}"
 
 class UserApplication(models.Model):
     account = models.ForeignKey('Account', on_delete=models.CASCADE)
