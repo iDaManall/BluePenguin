@@ -471,10 +471,11 @@ class TransactionSerializer(serializers.ModelSerializer):
     item_title = serializers.CharField(source='bid.item.title', read_only=True)
     bid_amount = serializers.DecimalField(source='bid.bid_price', max_digits=6, decimal_places=2, read_only=True)
     image_urls = serializers.JSONField(source='bid.item.image_urls')
+    bid = serializers.PrimaryKeyRelatedField(read_only=True)
     
     class Meta:
         model = Transaction
-        fields = ['id', 'seller_username', 'buyer_username', 'item_title', 'bid_amount', 'status', 'estimated_delivery', 'carrier', 'shipping_cost']
+        fields = ['id', 'seller_username', 'buyer_username', 'bid', 'item_title', 'bid_amount', 'status', 'estimated_delivery', 'carrier', 'shipping_cost', 'image_urls']
         extra_kwargs = {
             'status': {'read_only': True},  
             'estimated_delivery': {'read_only': True}, 
