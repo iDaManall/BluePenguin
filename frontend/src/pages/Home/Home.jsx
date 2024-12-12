@@ -7,6 +7,7 @@ import './Home.css';
 
 const Home = () => {
   const [featuredItems, setFeaturedItems] = useState([]);
+  const [popularItems, setPopularItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -17,7 +18,7 @@ const Home = () => {
         const response = await itemService.searchItems({
           ordering: '-total_bids',
           availability: 'available',
-          limit: 6
+          limit: 10
         });
         setFeaturedItems(response?.results || []);
       } catch (err) {
@@ -28,7 +29,25 @@ const Home = () => {
       }
     };
 
+    const fetchPopularItems = async () => {
+      try {
+        setLoading(true);
+        const response = await itemService.searchItems({
+          ordering: 'total_bids',
+          availability: 'available',
+          limit: 10
+        });
+        setPopularItems(response?.results || []);
+      } catch (err) {
+        setError('Failed to load featured items');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchFeaturedItems();
+    fetchPopularItems();
   }, []);
 
   return (
@@ -36,12 +55,24 @@ const Home = () => {
       <section className="hero-section">
         <h1>Find Your Next Treasure</h1>
         <p>Discover unique items and bid on what matters to you</p>
-        <SearchBar />
+        {/* <SearchBar /> */}
       </section>
 
       <section className="categories-section">
         <h2>Popular Categories</h2>
-        {/* <CategoryList /> */}
+        {loading && <div className="loading">Loading...</div>}
+        {error && <div className="error">{error}</div>}
+        {!loading && !error && (
+          <div className="items-grid">
+            {popularItems.length > 0 ? (
+              popularItems.map(item => (
+                <ItemCard key={item.id} item={item} />
+              ))
+            ) : (
+              <p>No items found</p>
+            )}
+          </div>
+        )}
       </section>
 
       <section className="featured-section">

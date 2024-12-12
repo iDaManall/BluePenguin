@@ -133,7 +133,7 @@ const Profile = () => {
               />
               <div className="item-info">
                 <h4>{item.title}</h4>
-                <p>{item.description}</p>
+                {/* <p>{item.description}</p> */}
                 <div className="item-details">
                   <p>Current Bid: ${item.highest_bid || 'No bids'}</p>
                   <p>Collection: {item.collection?.title}</p>
