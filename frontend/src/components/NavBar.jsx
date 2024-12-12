@@ -98,6 +98,7 @@ const Navbar = () => {
           type="text"
           placeholder="What would you like to find?"
           className="search-input"
+          id = 'black'
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -133,14 +134,13 @@ const Navbar = () => {
                 )}
 
                 <Link to="/requests">Requests</Link>
-              </div>
-              <div className="dropdown-divider"></div>
+             </div>
+            {/*} <div className="dropdown-divider"></div>
               <div className="dropdown-section">
-                <Link to="/orders/pending">Pending</Link>
-                <Link to="/orders/saved">Saved</Link>
-                <Link to="/orders/Awaiting Arrival">Awaiting Arrival</Link>
-                <Link to="/orders/shipped">Shipped</Link>
-              </div>
+                <Link to="/orders#pending">Pending</Link>
+                <Link to="/orders#saved">Saved</Link>
+                <Link to="/orders#next-actions">Next Actions</Link>
+              </div>*/}
             </div>
           )}
         </div>

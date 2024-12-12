@@ -126,7 +126,6 @@ const Orders = () => {
         
       } catch (error) {
         console.error('Error fetching orders:', error);
-        toast.error('Failed to load orders');
       }
     };
 

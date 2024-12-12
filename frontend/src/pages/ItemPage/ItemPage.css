@@ -17,6 +17,10 @@
   gap: 20px;
 }
 
+.item-header h1{
+font-weight: 800;
+
+}
 .main-image {
   border: 1px solid #ddd;
   border-radius: 8px;

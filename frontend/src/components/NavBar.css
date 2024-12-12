@@ -243,3 +243,7 @@
   color:black;
   padding-right: 10px;
 }
+#black::placeholder {
+  color: #aabfd9;
+  font-weight: 300;
+}
