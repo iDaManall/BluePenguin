@@ -32,7 +32,7 @@ This project is an online e-bidding platform where users can create and manage a
    ```
    
 3. Set up environment variables such as api keys and database urls. Run migrations if needed.
-- astute-harmony-441702-v4-897ad6a174e7.json
+- astute harmony file for google cloud related actions
 - Backend .env
   ```bash
   DB_NAME=
