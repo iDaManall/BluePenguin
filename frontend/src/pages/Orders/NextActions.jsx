@@ -23,7 +23,7 @@ const NextActions = ({ items }) => {
       // if (response) {
         toast.success('Winner accepted! Transaction completed.');
         // Optionally refresh the data
-        window.location.reload();
+        // window.location.reload();
         setWorked(true);
       // }
     } catch (error) {
@@ -41,6 +41,7 @@ const NextActions = ({ items }) => {
 
       if (error) throw error;
 
+      // window.location.reload();
       toast.success('Bid rejected successfully');
       setWorked(true);
     } catch (error) {
@@ -74,7 +75,7 @@ const NextActions = ({ items }) => {
         <p>No items requiring action</p>
       ) : (
         <div className="next-actions-list">
-          {worked && items.map((item) => (
+          {!worked && items.map((item) => (
             <div key={item.id} className="action-card">
               <img 
                 src={item.image_urls[0]} 
