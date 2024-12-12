@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../utils/client';
 import { toast } from 'react-toastify';
 import './Orders.css';
+import { accountService } from '../../api/api';
 import { itemService } from '../../api/api';
 
 
 const NextActions = ({ items }) => {
   const navigate = useNavigate();
   const [worked, setWorked] = useState(false);
-  
+  const token = localStorage.getItem('access_token');
 
   const handleAcceptWinner = async (item) => {
     try {
@@ -25,6 +26,7 @@ const NextActions = ({ items }) => {
         // Optionally refresh the data
         // window.location.reload();
         setWorked(true);
+        await accountService.addBalance(item.highestBid.bid_price, token);
       // }
     } catch (error) {
       console.error('Error accepting winner:', error);

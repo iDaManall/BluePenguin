@@ -450,8 +450,8 @@ class AccountViewSet(viewsets.ModelViewSet):
         balance = account.balance
         try:
             amount = Decimal(request.data.get('amount', 0))
-            if amount <= 0:
-                return Response({"error": "Must enter a positive amount of money."}, status=status.HTTP_400_BAD_REQUEST)
+            # if amount <= 0:
+            #     return Response({"error": "Must enter a positive amount of money."}, status=status.HTTP_400_BAD_REQUEST)
 
             balance += amount
             account.balance = balance
