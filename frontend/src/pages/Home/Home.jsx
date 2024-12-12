@@ -32,6 +32,8 @@ const Home = () => {
   }, []);
 
   return (
+
+    
     <div className="home-container">
       <section className="hero-section">
         <h1>Find Your Next Treasure</h1>

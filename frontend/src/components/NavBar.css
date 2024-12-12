@@ -20,9 +20,12 @@
 
 .brand {
   font-size: 1.5rem;
-  font-weight: bold;
+  font-weight: 500;
   color: #000;
   text-decoration: none;
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
 }
 
 /* Search Container */
@@ -227,4 +230,16 @@
   .navbar-right {
     gap: 1rem;
   }
+}
+
+* {
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 300;
+  font-style: normal;
+}
+
+.nav-icon{
+  color:black;
+  padding-right: 10px;
 }

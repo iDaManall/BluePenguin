@@ -5,6 +5,7 @@ import Register from '../pages/Auth/Register';
 import './Navbar.css';
 import { useAuth } from '../context/AuthContext';
 
+
 const Navbar = () => {
   const { user } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -101,7 +102,8 @@ const Navbar = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         <button type="submit" className="search-button">
-          <img src="/search-icon.png" alt="Search" className="search-icon" />
+          {/*<img src="/search-icon.png" alt="Search" className="search-icon" />*/}
+          <i className='bx bx-search bx-sm search-icon nav-icon'></i>
         </button>
       </form>
 
@@ -143,7 +145,8 @@ const Navbar = () => {
           )}
         </div>
         <Link to="/orders" className="cart-icon">
-          <img src="/cart-icon.png" alt="Cart" />
+         {/* <img src="/cart-icon.png" alt="Cart" />*/}
+         <i class='bx bxs-cart bx-sm nav-icon'></i>
         </Link>
       </div>
     </nav>
