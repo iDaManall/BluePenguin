@@ -257,3 +257,7 @@
 .search-icon{
   padding-right: 10px;
 }
+
+*{
+  font-family: "Inter", serif;
+}
