@@ -85,21 +85,21 @@ const Orders = () => {
 
         // If no filters are active or if pending filter is active
         if (activeFilters.length === 0 || activeFilters.includes('pending')) {
-          const pendingBidsData = await itemService.getPendingBids(token);
-          setPendingBids(pendingBidsData.filter(bid => 
-            bid.status === 'ACT' && bid.winner_status === 'I'
-          ));
+          // const pendingBidsData = await itemService.getPendingBids(token);
+          // setPendingBids(pendingBidsData.filter(bid => 
+          //   bid.status === 'ACT' && bid.winner_status === 'I'
+          // ));
         }
 
         // Fetch other sections as needed
         if (activeFilters.length === 0 || activeFilters.includes('saved')) {
-          const saved = await itemService.getSavedItems(token);
-          setSavedItems(saved);
+          // const saved = await itemService.getSavedItems(token);
+          // setSavedItems(saved);
         }
 
         if (activeFilters.length === 0 || activeFilters.includes('awaiting')) {
-          const awaiting = await transactionService.getAwaitingArrivals(token);
-          setAwaitingArrivals(awaiting);
+          // const awaiting = await transactionService.getAwaitingArrivals(token);
+          // setAwaitingArrivals(awaiting);
         }
         if (activeFilters.length === 0 || activeFilters.includes('next-actions')) {
           try {
@@ -107,17 +107,17 @@ const Orders = () => {
             const response = await transactionService.getNextActions(token);
             
             // Process items based on deadline
-            const processedItems = response.map(item => ({
-              ...item,
-              isExpired: new Date(item.deadline) < new Date(),
-              highestBid: item.bids.length > 0 ? 
-                item.bids.reduce((max, bid) => 
-                  bid.bid_price > max.bid_price ? bid : max, 
-                  { bid_price: 0 }
-                ) : null
-            }));
+            // const processedItems = response.map(item => ({
+            //   ...item,
+            //   isExpired: new Date(item.deadline) < new Date(),
+            //   highestBid: item.bids.length > 0 ? 
+            //     item.bids.reduce((max, bid) => 
+            //       bid.bid_price > max.bid_price ? bid : max, 
+            //       { bid_price: 0 }
+            //     ) : null
+            // }));
         
-            setNextActions(processedItems);
+            // setNextActions(processedItems);
           } catch (error) {
             console.error('Error fetching next actions:', error);
             toast.error('Failed to load next actions');

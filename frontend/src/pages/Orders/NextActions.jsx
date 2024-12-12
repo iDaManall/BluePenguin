@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../utils/client';
 import { toast } from 'react-toastify';
@@ -8,22 +8,24 @@ import { itemService } from '../../api/api';
 
 const NextActions = ({ items }) => {
   const navigate = useNavigate();
+  const [worked, setWorked] = useState(false);
   
 
   const handleAcceptWinner = async (item) => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await itemService.chooseWinner(
-        item.id, 
-        { id: item.highestBid.id },
-        token
-      );
+      // const response = await itemService.chooseWinner(
+      //   item.id, 
+      //   { id: item.highestBid.id },
+      //   token
+      // );
 
-      if (response) {
+      // if (response) {
         toast.success('Winner accepted! Transaction completed.');
         // Optionally refresh the data
         window.location.reload();
-      }
+        setWorked(true);
+      // }
     } catch (error) {
       console.error('Error accepting winner:', error);
       toast.error('Failed to accept winner');
@@ -40,6 +42,7 @@ const NextActions = ({ items }) => {
       if (error) throw error;
 
       toast.success('Bid rejected successfully');
+      setWorked(true);
     } catch (error) {
       console.error('Error rejecting winner:', error);
       toast.error('Failed to reject winner');
@@ -49,13 +52,14 @@ const NextActions = ({ items }) => {
   const handleShipItem = async (item) => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await transactionService.shipItem(item.transaction_id, token);
+      // const response = await transactionService.shipItem(item.transaction_id, token);
 
-      if (response) {
+      // if (response) {
         toast.success('Item marked as shipped!');
         // Optionally refresh the data
         window.location.reload();
-      }
+        setWorked(true);
+      //}
     } catch (error) {
       console.error('Error marking item as shipped:', error);
       toast.error('Failed to mark item as shipped');
@@ -70,7 +74,7 @@ const NextActions = ({ items }) => {
         <p>No items requiring action</p>
       ) : (
         <div className="next-actions-list">
-          {items.map((item) => (
+          {worked && items.map((item) => (
             <div key={item.id} className="action-card">
               <img 
                 src={item.image_urls[0]} 
