@@ -15,6 +15,7 @@ This project is an online e-bidding platform where users can create and manage a
    ```bash
    git clone https://github.com/iDaManall/BluePenguin.git
    ```
+   
 2. Install dependencies and initiate virtual environment:
 
    Frontend:
@@ -59,7 +60,7 @@ This project is an online e-bidding platform where users can create and manage a
   VITE_SUPABASE_ANON_KEY=""
   ```
 
-4. Start the application:
+## Start the application:
    
    Frontend:
    ```bash
