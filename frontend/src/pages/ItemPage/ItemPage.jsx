@@ -351,7 +351,7 @@ const ItemPage = () => {
           <div className="bid-info">
             <div className="current-bid">
               <h2>Highest Bid</h2>
-              <p>${item.highest_bid || 'No bids yet'}</p> 
+              <p>${item.highest_bid || item.minimum_bid || 'No bids yet'}</p> 
             </div>
             <div className="time-remaining">
               <h2>Time Remaining</h2>

@@ -155,7 +155,7 @@ const Navbar = () => {
           )}
         </div>
         <Link to="/orders" className="cart-icon">
-         <i class='bx bxs-cart bx-sm nav-icon'></i>
+         <i className='bx bxs-cart bx-sm nav-icon'></i>
         </Link>
       </div>
     </nav>

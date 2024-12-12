@@ -142,6 +142,7 @@ const Profile = () => {
     }
   };
   
+  let userStatus = user.status === 'V';
 
   return (
     <div className="profile-container">
@@ -182,7 +183,7 @@ const Profile = () => {
           )}
           </div>
         </div>
-        {isOwnProfile && (
+        {!userStatus && isOwnProfile && (
           <button 
             className="edit-profile-btn"
             onClick={() => navigate('/profile/edit')}
@@ -195,7 +196,7 @@ const Profile = () => {
       <div className="product-listings">
         <div className="listings-header">
           <h3>Product Listings ({items.length})</h3>
-          {isOwnProfile && (
+          {!userStatus && isOwnProfile && (
             <button 
               className="add-item-btn"
               onClick={() => navigate('/items/new')}
