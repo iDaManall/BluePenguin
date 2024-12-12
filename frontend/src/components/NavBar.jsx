@@ -60,6 +60,11 @@ const Navbar = () => {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/login');
+  };
+
   return (
     <nav className="navbar">
       <div className="navbar-left">
@@ -138,6 +143,10 @@ const Navbar = () => {
                 <Link to="/orders/saved">Saved</Link>
                 <Link to="/orders/Awaiting Arrival">Awaiting Arrival</Link>
                 <Link to="/orders/shipped">Shipped</Link>
+              </div>
+              <div className="dropdown-divider"></div>
+              <div className="dropdown-section">
+                <button onClick={handleLogout} className="logout-button">Logout</button>
               </div>
             </div>
           )}
