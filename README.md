@@ -15,7 +15,7 @@ This project is an online e-bidding platform where users can create and manage a
    ```bash
    git clone https://github.com/iDaManall/BluePenguin.git
    ```
-2. Install dependencies:
+2. Install dependencies and initiate virtual environment:
 
    Frontend:
    ```bash
@@ -30,9 +30,36 @@ This project is an online e-bidding platform where users can create and manage a
    cd backend
    pip install -r requirements.txt  # for backend
    ```
-4. Set up environment variables such as api keys and database urls. Run migrations if needed. 
+   
+3. Set up environment variables such as api keys and database urls. Run migrations if needed.
+- astute-harmony-441702-v4-897ad6a174e7.json
+- Backend .env
+  ```bash
+  DB_NAME=
+  DB_USER=
+  DB_PASSWORD=
+  DB_HOST=
+  DB_PORT=
+  EMAIL_HOST_USER=
+  EMAIL_HOST_PASSWORD=
+  GOOGLE_APPLICATION_CREDENTIALS=
+  GOOGLE_CLOUD_PROJECT_ID=
+  GOOGLE_CLOUD_STORAGE_BUCKET=
+  SHIPPO_API_KEY=
+  GOOGLE_APPLICATION_CREDENTIALS=
+   
+  SUPABASE_URL=
+  SUPABASE_ANON_KEY=
+  SUPABASE_SERVICE_ROLE_KEY=
+  ```
+- Frontend .env
+  ```bash
+  VITE_API_URL=""
+  VITE_SUPABASE_URL=""
+  VITE_SUPABASE_ANON_KEY=""
+  ```
 
-5. Start the application:
+4. Start the application:
    
    Frontend:
    ```bash
