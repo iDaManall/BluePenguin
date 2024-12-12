@@ -61,6 +61,11 @@ const Navbar = () => {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/login');
+  };
+
   return (
     <nav className="navbar">
       <div className="navbar-left">
@@ -137,15 +142,19 @@ const Navbar = () => {
              </div>
             {/*} <div className="dropdown-divider"></div>
               <div className="dropdown-section">
-                <Link to="/orders#pending">Pending</Link>
-                <Link to="/orders#saved">Saved</Link>
-                <Link to="/orders#next-actions">Next Actions</Link>
+                <Link to="/orders/pending">Pending</Link>
+                <Link to="/orders/saved">Saved</Link>
+                <Link to="/orders/Awaiting Arrival">Awaiting Arrival</Link>
+                <Link to="/orders/shipped">Shipped</Link>
               </div>*/}
+              <div className="dropdown-divider"></div>
+              <div className="dropdown-section">
+                <button onClick={handleLogout} className="logout-button">Logout</button>
+              </div>
             </div>
           )}
         </div>
         <Link to="/orders" className="cart-icon">
-         {/* <img src="/cart-icon.png" alt="Cart" />*/}
          <i class='bx bxs-cart bx-sm nav-icon'></i>
         </Link>
       </div>
