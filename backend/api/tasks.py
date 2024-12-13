@@ -10,28 +10,6 @@ from django.db.models import Q
 @shared_task
 def check_auction_deadlines():
     
-    # send relevant emails for items sold in 24h
-    items_ending_in_24h = Item.objects.filter(
-        deadline__lte=timezone.now() + timedelta(days=1),
-        deadline__gt=timezone.now(),
-        availability = AVAILABLE_CHOICE
-    )
-
-    for item in items_ending_in_24h:
-        EmailNotifications.notify_deadline_24h(
-            item.profile.account.user,
-            item,
-            is_seller=True
-        )
-
-        bidders = User.objects.filter(account__profile__bid__item=item).distinct()
-        for bidder in bidders:
-            EmailNotifications.notify_deadline_24h(
-                bidder,
-                item,
-                is_seller=False
-            )
-
     # perform proper actions for items sold
     items_ended = Item.objects.filter(
         deadline__lte=timezone.now(),
@@ -57,6 +35,29 @@ def check_auction_deadlines():
             buyer_user, 
             item,
         )
+    
+     # send relevant emails for items sold in 24h
+    items_ending_in_24h = Item.objects.filter(
+        deadline__lte=timezone.now() + timedelta(days=1),
+        deadline__gt=timezone.now(),
+        availability = AVAILABLE_CHOICE
+    )
+
+    for item in items_ending_in_24h:
+        EmailNotifications.notify_deadline_24h(
+            item.profile.account.user,
+            item,
+            is_seller=True
+        )
+
+        bidders = User.objects.filter(account__profile__bid__item=item).distinct()
+        for bidder in bidders:
+            EmailNotifications.notify_deadline_24h(
+                bidder,
+                item,
+                is_seller=False
+            )
+
 
 
         
